@@ -5,7 +5,9 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "specializations")
+@Table(name = "specializations", uniqueConstraints = {
+        @UniqueConstraint(columnNames = "name")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,5 +17,9 @@ public class Specialization {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    private String name; // E.g., "Family Law", "Criminal Law", etc.
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "lawyer_id", nullable = false)
+    private Lawyer lawyer;
 }

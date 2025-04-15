@@ -17,27 +17,28 @@ public class Consultation {
 
     @ManyToOne
     @JoinColumn(name = "citizen_id", nullable = false)
-    private User citizen;
+    private Citizen citizen;
 
     @ManyToOne
     @JoinColumn(name = "lawyer_id", nullable = false)
-    private User lawyer;
+    private Lawyer lawyer;
 
-    private String subject; // Short description of the issue
-    private String description; // Detailed description of the case
+    private String subject;
+    private String description;
 
     @Enumerated(EnumType.STRING)
     private ConsultationStatus status; // 'pending', 'accepted', 'completed'
 
-    private Long scheduledTime; // Time for the consultation
+    private Long scheduledTime;
 
-    private String whatsappLink; // Link to WhatsApp chat (pre-filled)
+    private String whatsappLink;
 
     private Long createdAt;
     private Long updatedAt;
 
     public enum ConsultationStatus {
         PENDING,
+        REJECTED,
         ACCEPTED,
         COMPLETED
     }

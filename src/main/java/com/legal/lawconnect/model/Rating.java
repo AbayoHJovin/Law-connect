@@ -5,7 +5,9 @@ import jakarta.persistence.*;
 import java.util.UUID;
 
 @Entity
-@Table(name = "ratings")
+@Table(name = "ratings", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"citizen_id", "lawyer_id"})
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -15,17 +17,23 @@ public class Rating {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    @ManyToOne
-    @JoinColumn(name = "citizen_id", nullable = false)
-    private User citizen;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "citizen_id")
+    private Citizen citizen;
 
-    @ManyToOne
-    @JoinColumn(name = "lawyer_id", nullable = false)
-    private User lawyer;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "lawyer_id")
+    private Lawyer lawyer;
 
-    private int rating; // E.g., from 1 to 5
-
-    private String comment; // Optional feedback comment
-
+    private int rating;
+    private String reviewText;
     private Long createdAt;
+
+    public Rating(Citizen citizen, Lawyer lawyer, int rating, String reviewText) {
+        this.citizen = citizen;
+        this.lawyer = lawyer;
+        this.rating = rating;
+        this.reviewText = reviewText;
+        this.createdAt = System.currentTimeMillis();
+    }
 }
