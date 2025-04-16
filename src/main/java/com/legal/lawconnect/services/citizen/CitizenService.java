@@ -127,24 +127,49 @@ public class CitizenService implements ICitizenService {
 
     @Override
     public Citizen UpdateCitizen(UpdateCitizenRequest citizen, UUID citizenId) {
-        return null;
+        return citizenRepository.findById(citizenId)
+                .map(existingCitizen-> updateExistingCitizen(existingCitizen,citizen))
+                .map(citizenRepository::save)
+                .orElseThrow(()-> new ResourceNotFoundException("Citizen not found"));
     }
     private Citizen updateExistingCitizen(Citizen existingCitizen, UpdateCitizenRequest request){
-
+    existingCitizen.setFullName(request.getFullName());
+    existingCitizen.setEmail(request.getEmail());
+    existingCitizen.setPhoneNumber(request.getPhoneNumber());
+    existingCitizen.setLanguagePreference(request.getLanguagePreference());
+    existingCitizen.setLocation(request.getLocation());
+    return existingCitizen;
     }
 
     @Override
     public void deleteCitizen(UUID id) {
-
+    citizenRepository.findById(id)
+            .ifPresentOrElse(citizenRepository::delete,
+                    ()-> {throw new ResourceNotFoundException("Citizen not found");}
+                    );
     }
 
     @Override
     public Citizen findCitizenByPhoneNumberAndPassword(String phoneNumber, String password) {
-        return null;
+        Citizen citizen = citizenRepository.findByPhoneNumber(phoneNumber);
+        if(citizen == null){
+          throw new ResourceNotFoundException("Citizen not found");
+        }
+        if(!passwordEncoder.matches(password, citizen.getPassword())){
+          throw new UnauthorizedActionException("Passwords do not match");
+        }
+        return citizen;
     }
 
     @Override
     public Citizen findCitizenByEmailAndPassword(String email, String password) {
-        return null;
+        Citizen citizen = citizenRepository.findByEmail(email);
+        if(citizen == null){
+          throw new ResourceNotFoundException("Citizen not found");
+        }
+        if(!passwordEncoder.matches(password, citizen.getPassword())){
+          throw new UnauthorizedActionException("Passwords do not match");
+        }
+        return citizen;
     }
 }

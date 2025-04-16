@@ -7,10 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(
-        name = "citizens",
-        uniqueConstraints = @UniqueConstraint(columnNames = {"email", "phoneNumber"})
-)
+@Table(name = "citizens")
 
 @Getter
 @Setter

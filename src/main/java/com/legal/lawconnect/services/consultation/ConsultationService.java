@@ -1,0 +1,168 @@
+package com.legal.lawconnect.services.consultation;
+
+import com.legal.lawconnect.exceptions.ResourceNotFoundException;
+import com.legal.lawconnect.exceptions.UnauthorizedActionException;
+import com.legal.lawconnect.model.Citizen;
+import com.legal.lawconnect.model.Consultation;
+import com.legal.lawconnect.model.Lawyer;
+import com.legal.lawconnect.repository.ConsultationRepository;
+import com.legal.lawconnect.requests.CreateConsultationRequest;
+import com.legal.lawconnect.requests.UpdateConsultationRequest;
+import com.legal.lawconnect.services.citizen.CitizenService;
+import com.legal.lawconnect.services.citizen.ICitizenService;
+import com.legal.lawconnect.services.lawyer.ILawyerService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class ConsultationService implements IConsultationService {
+    private final ConsultationRepository consultationRepository;
+    private final ILawyerService lawyerService;
+    private final ICitizenService citizenService;
+    @Override
+    public Consultation.ConsultationStatus getConsultationStatus(UUID ownerId, UUID consultationId) {
+        Consultation consultation = consultationRepository.findById(consultationId)
+                .orElseThrow(()-> new ResourceNotFoundException("Consultation with id " + consultationId + " not found"));
+
+
+        boolean isOwner = consultation.getLawyer().getId().equals(ownerId)
+                || consultation.getCitizen().getId().equals(ownerId);
+
+        if (!isOwner) {
+            throw new UnauthorizedActionException("You are not authorized to access this consultation");
+        }
+
+        return consultation.getStatus();
+    }
+
+
+    @Override
+    public Consultation getConsultationById(UUID consultationId) {
+        return consultationRepository.findById(consultationId)
+                .orElseThrow(()-> new ResourceNotFoundException("Consultation with id " + consultationId + " not found"));
+    }
+
+    @Override
+    public List<Consultation> getAllConsultations() {
+        return consultationRepository.findAll();
+    }
+
+    @Override
+    public List<Consultation> getConsultationsForLawyer(UUID lawyerId) {
+        Lawyer owner = lawyerService.findById(lawyerId);
+        if(owner == null) {
+            throw new ResourceNotFoundException("Lawyer with id " + lawyerId + " not found");
+        }
+        return owner.getConsultations();
+    }
+
+    @Override
+    public List<Consultation> getConsultationsForCitizen(UUID citizenId) {
+        Citizen owner = citizenService.getCitizenById(citizenId);
+        if(owner == null) {
+            throw new ResourceNotFoundException("Citizen with id " + citizenId + " not found");
+        }
+        return owner.getConsultations();
+    }
+
+    @Override
+    public List<Consultation> getConsultationsBetweenLawyerAndCitizen(UUID lawyerId, UUID citizenId) {
+        Citizen citizenOwner = citizenService.getCitizenById(citizenId);
+        Lawyer lawyerOwner = lawyerService.findById(lawyerId);
+
+        if (lawyerOwner == null) {
+            throw new ResourceNotFoundException("Lawyer with id " + lawyerId + " not found");
+        }
+
+        if (citizenOwner == null) {
+            throw new ResourceNotFoundException("Citizen with id " + citizenId + " not found");
+        }
+
+        List<Consultation> consultations = lawyerOwner.getConsultations();
+
+        return consultations.stream()
+                .filter(consultation ->
+                        consultation.getLawyer().getId().equals(lawyerId) &&
+                                consultation.getCitizen().getId().equals(citizenId))
+                .toList();
+    }
+
+    @Override
+    public List<Consultation> getConsultationsByStatus(Consultation.ConsultationStatus status) {
+        return consultationRepository.findByStatus(status);
+    }
+
+    @Override
+    public List<Consultation> getConsultationsByStatusForLawyer(Consultation.ConsultationStatus status, UUID lawyerId) {
+        Lawyer owner = lawyerService.findById(lawyerId);
+        if(owner == null) {
+            throw new ResourceNotFoundException("Lawyer with id " + lawyerId + " not found");
+        }
+        List<Consultation> consultations = owner.getConsultations();
+        return consultations.stream()
+                .filter(cons-> cons.getStatus().equals(status))
+                .toList();
+    }
+
+    @Override
+    public Consultation createConsultation(CreateConsultationRequest consultation) {
+        Lawyer ownerLawyer = lawyerService.findById(consultation.getLawyerId());
+        Citizen ownerCitizen = citizenService.getCitizenById(consultation.getCitizenId());
+        if (ownerLawyer == null || ownerCitizen == null) {
+            throw new ResourceNotFoundException("Missing lawyer or citizen");
+        }
+       return consultationRepository.save(createNewConsultation(consultation, ownerLawyer, ownerCitizen));
+    }
+    private Consultation createNewConsultation(CreateConsultationRequest consultation, Lawyer ownerLawyer, Citizen ownerCitizen) {
+        return new Consultation(
+                ownerCitizen,
+                ownerLawyer,
+                consultation.getSubject(),
+                consultation.getDescription(),
+                consultation.getStatus()
+        );
+    }
+    @Override
+    public Consultation updateConsultation(UUID consultationId, UpdateConsultationRequest updatedConsultation) {
+    return consultationRepository.findById(consultationId)
+            .map(existingConsultation-> updateExistingConsultation(existingConsultation, updatedConsultation))
+            .map(consultationRepository::save)
+            .orElseThrow(() -> new ResourceNotFoundException("Consultation not found"));
+    }
+    private Consultation updateExistingConsultation(Consultation existingConsultation , UpdateConsultationRequest request){
+       existingConsultation.setSubject(request.getSubject());
+       existingConsultation.setDescription(request.getDescription());
+       existingConsultation.setStatus(request.getStatus());
+       return existingConsultation;
+    }
+    @Override
+    public Consultation changeStatus(UUID lawyerId, UUID consultationId, Consultation.ConsultationStatus newStatus) {
+        Consultation target = getConsultationById(consultationId);
+        if(target == null) {
+            throw new ResourceNotFoundException("Consultation with id " + consultationId + " not found");
+        }
+        if(!target.getLawyer().getId().equals(lawyerId)) {
+            throw new UnauthorizedActionException("You are not allowed to update the status");
+        }
+        target.setStatus(newStatus);
+        consultationRepository.save(target);
+        return target;
+    }
+
+    @Override
+    public void deleteConsultation(UUID consultationId, UUID lawyerId) {
+        Consultation target = getConsultationById(consultationId);
+        if(target == null) {
+            throw new ResourceNotFoundException("Consultation with id " + consultationId + " not found");
+        }
+        if(!target.getLawyer().getId().equals(lawyerId)) {
+            throw new UnauthorizedActionException("You are not allowed to delete the consultation!");
+        }
+        consultationRepository.delete(target);
+    }
+}

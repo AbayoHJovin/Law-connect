@@ -29,10 +29,6 @@ public class Consultation {
     @Enumerated(EnumType.STRING)
     private ConsultationStatus status; // 'pending', 'accepted', 'completed'
 
-    private Long scheduledTime;
-
-    private String whatsappLink;
-
     private Long createdAt;
     private Long updatedAt;
 
@@ -40,6 +36,17 @@ public class Consultation {
         PENDING,
         REJECTED,
         ACCEPTED,
+        ONGOING,
         COMPLETED
+    }
+
+    public Consultation(Citizen citizen, Lawyer lawyer, String subject, String description, ConsultationStatus status) {
+        this.citizen = citizen;
+        this.lawyer = lawyer;
+        this.subject = subject;
+        this.description = description;
+        this.status = status;
+        this.createdAt = System.currentTimeMillis();
+        this.updatedAt = createdAt;
     }
 }

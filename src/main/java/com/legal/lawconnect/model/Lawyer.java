@@ -42,6 +42,7 @@ public class Lawyer extends User {
         this.specialization = specialization;
     }
 
+
     @Override
     public UUID getId() {
         return id;

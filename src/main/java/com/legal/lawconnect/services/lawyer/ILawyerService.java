@@ -3,6 +3,7 @@ package com.legal.lawconnect.services.lawyer;
 import com.legal.lawconnect.model.Consultation;
 import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.requests.AddLawyerRequest;
+import com.legal.lawconnect.requests.UpdateLawyerRequest;
 
 import java.util.List;
 import java.util.UUID;
@@ -13,10 +14,14 @@ public interface ILawyerService {
     Lawyer findById(UUID id);
     Lawyer findByEmail(String email);
     Lawyer findByPhone(String phone);
-    Lawyer updateLawyer(Lawyer lawyer, UUID id);
+    Lawyer updateLawyer(UpdateLawyerRequest lawyer, UUID id);
     void deleteLawyer(UUID id);
     void setAvailabilityForWork(UUID lawyerId, boolean availability);
-//    Consultation.ConsultationStatus getConsultationStatus(UUID lawyerId, UUID consultationId);
-//    List<Consultation> getConsultationsForLawyer(UUID lawyerId);
-//    List<Consultation> getConsultationsBetweenLawyerAndCitizen(UUID lawyerId, UUID citizenId);
+    Lawyer findLawyerByEmailAndPassword(String email, String password);
+    Lawyer findLawyerByPhoneAndPassword(String phone, String password);
+    List<Lawyer> findLawyersByRatingScoresBelow(int score);
+    List<Lawyer> findLawyersByRatingScoresAbove(int score);
+    List<Lawyer> findLawyersByRatingScoresEqualsTo(int score);
+    void changeLanguagePreference(String languagePreference, UUID citizenId);
+    void changePassword(String oldPassword, String newPassword, UUID citizenId);
 }
