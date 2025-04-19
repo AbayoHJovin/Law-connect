@@ -16,6 +16,5 @@ public class LawyerDto {
     private String licenseNumber;
     private int yearsOfExperience;
     private String location;
-    private String password;
     private List<SpecializationDto> specializations;
 }

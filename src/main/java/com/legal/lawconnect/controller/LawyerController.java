@@ -23,14 +23,14 @@ import java.util.UUID;
 public class LawyerController {
     private final ILawyerService lawyerService;
 
-    @PostMapping("/addLawyer")
+    @PostMapping("/add-lawyer")
     public ResponseEntity<ApiResponse> addLawyer(@RequestBody AddLawyerRequest lawyer) {
         try{
             Lawyer lawyerSaved = lawyerService.save(lawyer);
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyerSaved);
-            return ResponseEntity.ok(new ApiResponse("success", lawyerSaved));
-        }catch(AlreadyExistsException e){
-            return ResponseEntity.status(401).body(new ApiResponse("error", e.getMessage()));
+            return ResponseEntity.ok(new ApiResponse("success", convertedLawyer));
+        }catch(RuntimeException e){
+            return ResponseEntity.status(500).body(new ApiResponse(e.getMessage(),null));
         }
     }
 
@@ -42,7 +42,7 @@ public class LawyerController {
             List<LawyerDto> convertedLawyers = lawyerService.getConvertedLawyers(lawyers);
             return ResponseEntity.ok(new ApiResponse("success", convertedLawyers));
         }catch (Exception e){
-            return ResponseEntity.status(500).body(new ApiResponse("error", e.getMessage()));
+            return ResponseEntity.status(500).body(new ApiResponse(e.getMessage(),null));
         }
     }
 

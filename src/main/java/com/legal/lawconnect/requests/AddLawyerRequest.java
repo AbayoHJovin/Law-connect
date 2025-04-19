@@ -8,7 +8,6 @@ import java.util.UUID;
 
 @Data
 public class AddLawyerRequest {
-    private UUID id;
     private String fullName;
     private String email;
     private String phoneNumber;
@@ -17,5 +16,5 @@ public class AddLawyerRequest {
     private int yearsOfExperience;
     private String location;
     private String password;
-    private List<Specialization> specialization;
+    private List<SpecializationRequest> specialization;
 }

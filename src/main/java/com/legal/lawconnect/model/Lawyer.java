@@ -22,8 +22,14 @@ public class Lawyer extends User {
     @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Rating> ratings;
 
-    @OneToMany(mappedBy = "lawyer" , cascade = CascadeType.ALL, orphanRemoval = true)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(
+            name = "lawyer_specializations",
+            joinColumns = @JoinColumn(name = "lawyer_id"),
+            inverseJoinColumns = @JoinColumn(name = "specialization_id")
+    )
     private List<Specialization> specialization;
+
 
     @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Consultation> consultations;

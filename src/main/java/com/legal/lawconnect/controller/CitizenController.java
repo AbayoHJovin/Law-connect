@@ -5,7 +5,6 @@ import com.legal.lawconnect.dto.CitizenDto;
 import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.model.Citizen;
-import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.requests.*;
 import com.legal.lawconnect.response.ApiResponse;
 import com.legal.lawconnect.services.citizen.ICitizenService;
@@ -26,9 +25,10 @@ public class CitizenController {
     public ResponseEntity<ApiResponse> addCitizen(@RequestBody AddCitizenRequest citizen) {
         try{
             Citizen theCitizen = citizenService.addCitizen(citizen);
-            return ResponseEntity.ok(new ApiResponse("Success", theCitizen));
+            CitizenDto convertedCitizen = citizenService.convertCitizenToDto(theCitizen);
+            return ResponseEntity.ok(new ApiResponse("Success", convertedCitizen));
         }catch(AlreadyExistsException e){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(), null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
     @GetMapping("/all")
@@ -48,7 +48,7 @@ public class CitizenController {
             Citizen citizen = citizenService.getCitizenById(citizenId);
             CitizenDto convertedCitizen = citizenService.convertCitizenToDto(citizen);
             return ResponseEntity.ok(new ApiResponse("Success", convertedCitizen));
-        }catch(ResourceNotFoundException e){
+        }catch(RuntimeException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
         }
     }
@@ -92,7 +92,7 @@ public class CitizenController {
             citizenService.rateLawyer(request);
             return ResponseEntity.ok(new ApiResponse("You've rated the lawyer successfully!", null));
         }catch(ResourceNotFoundException | AlreadyExistsException e){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(), null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
         }
     }
 
@@ -102,7 +102,7 @@ public class CitizenController {
             citizenService.changePassword(request);
             return ResponseEntity.ok(new ApiResponse("Password changed Successfully", null));
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(),null));
         }
     }
 
@@ -117,10 +117,10 @@ public class CitizenController {
 
     }
 
-    @PutMapping("/update-citizen/{citizenId}")
-    public ResponseEntity<ApiResponse> updateCitizen(@RequestBody UpdateCitizenRequest request , @PathVariable UUID citizenId){
+    @PatchMapping("/update-citizen")
+    public ResponseEntity<ApiResponse> updateCitizen(@RequestBody UpdateCitizenRequest request){
         try {
-            Citizen cit = citizenService.updateCitizen(request, citizenId);
+            Citizen cit = citizenService.updateCitizen(request, request.getCitizenId());
             CitizenDto convertedCitizen = citizenService.convertCitizenToDto(cit);
             return ResponseEntity.ok(new ApiResponse("Success", convertedCitizen));
         }catch(ResourceNotFoundException e){

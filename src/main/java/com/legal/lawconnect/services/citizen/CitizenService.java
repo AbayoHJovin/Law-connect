@@ -131,13 +131,24 @@ public class CitizenService implements ICitizenService {
                 .orElseThrow(()-> new ResourceNotFoundException("Citizen not found"));
     }
     private Citizen updateExistingCitizen(Citizen existingCitizen, UpdateCitizenRequest request){
-    existingCitizen.setFullName(request.getFullName());
-    existingCitizen.setEmail(request.getEmail());
-    existingCitizen.setPhoneNumber(request.getPhoneNumber());
-    existingCitizen.setLanguagePreference(request.getLanguagePreference());
-    existingCitizen.setLocation(request.getLocation());
-    return existingCitizen;
+        if (request.getFullName() != null)
+            existingCitizen.setFullName(request.getFullName());
+
+        if (request.getEmail() != null)
+            existingCitizen.setEmail(request.getEmail());
+
+        if (request.getPhoneNumber() != null)
+            existingCitizen.setPhoneNumber(request.getPhoneNumber());
+
+        if (request.getLanguagePreference() != null)
+            existingCitizen.setLanguagePreference(request.getLanguagePreference());
+
+        if (request.getLocation() != null)
+            existingCitizen.setLocation(request.getLocation());
+
+        return existingCitizen;
     }
+
 
     @Override
     public void deleteCitizen(UUID id) {
@@ -151,10 +162,10 @@ public class CitizenService implements ICitizenService {
     public Citizen findCitizenByPhoneNumberAndPassword(PhoneLoginRequest loginRequest) {
         Citizen citizen = citizenRepository.findByPhoneNumber(loginRequest.getPhoneNumber());
         if(citizen == null){
-          throw new ResourceNotFoundException("Citizen not found");
+          throw new ResourceNotFoundException("Invalid Credentials");
         }
         if(!passwordEncoder.matches(loginRequest.getPassword(), citizen.getPassword())){
-          throw new UnauthorizedActionException("Passwords do not match");
+          throw new ResourceNotFoundException("Invalid Credentials");
         }
         return citizen;
     }

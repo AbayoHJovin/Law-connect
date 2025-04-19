@@ -2,6 +2,8 @@ package com.legal.lawconnect.model;
 
 import lombok.*;
 import jakarta.persistence.*;
+
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -17,7 +19,6 @@ public class Specialization {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
     private String name;
-    @ManyToOne
-    @JoinColumn(name = "lawyer_id", nullable = false)
-    private Lawyer lawyer;
+    @ManyToMany(mappedBy = "specialization")
+    private List<Lawyer> lawyer;
 }

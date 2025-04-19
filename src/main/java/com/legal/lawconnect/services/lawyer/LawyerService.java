@@ -44,16 +44,14 @@ public class LawyerService implements ILawyerService {
             throw new AlreadyExistsException("Lawyer already exists!");
         }
 
-        List<Specialization> updatedSpecializations = lawyer.getSpecialization().stream()
-                .map(s -> {
-                    Specialization existing = specializationRepository.findByName(s.getName());
-                    return existing != null ? existing : specializationRepository.save(s);
-                })
-                .collect(Collectors.toList());
+        // Reuse specialization resolution logic
+        List<Specialization> specializationList = resolveSpecializations(lawyer.getSpecialization());
 
-        Lawyer newLawyer = createLawyer(lawyer, updatedSpecializations);
+        // Create and save the new lawyer
+        Lawyer newLawyer = createLawyer(lawyer, specializationList);
         return lawyerRepository.save(newLawyer);
     }
+
     private Lawyer createLawyer(AddLawyerRequest request, List<Specialization> specialization){
         String hashedPassword = passwordEncoder.encode(request.getPassword());
     return new Lawyer(
@@ -68,6 +66,20 @@ public class LawyerService implements ILawyerService {
             specialization
             );
     }
+    private List<Specialization> resolveSpecializations(List<SpecializationRequest> specializationRequests) {
+        List<Specialization> specializationList = new ArrayList<>();
+
+        for (SpecializationRequest s : specializationRequests) {
+            Specialization exists = specializationRepository.findByName(s.getSpecializationName());
+            if (exists == null) {
+                exists = specializationService.addSpecialization(s.getSpecializationName());
+            }
+            specializationList.add(exists);
+        }
+
+        return specializationList;
+    }
+
     @Override
     public List<Lawyer> findAll() {
         return lawyerRepository.findAll();
