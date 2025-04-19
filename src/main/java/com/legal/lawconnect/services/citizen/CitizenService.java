@@ -1,17 +1,14 @@
 package com.legal.lawconnect.services.citizen;
 
+import com.legal.lawconnect.requests.*;
+import org.modelmapper.ModelMapper;
+import com.legal.lawconnect.dto.CitizenDto;
 import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.exceptions.UnauthorizedActionException;
 import com.legal.lawconnect.model.Citizen;
 import com.legal.lawconnect.model.Lawyer;
-import com.legal.lawconnect.model.Rating;
 import com.legal.lawconnect.repository.CitizenRepository;
-import com.legal.lawconnect.repository.LawyerRepository;
-import com.legal.lawconnect.repository.RatingRepository;
-import com.legal.lawconnect.requests.AddCitizenRequest;
-import com.legal.lawconnect.requests.AddRatingRequest;
-import com.legal.lawconnect.requests.UpdateCitizenRequest;
 import com.legal.lawconnect.services.lawyer.ILawyerService;
 import com.legal.lawconnect.services.rating.IRatingService;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +25,9 @@ public class CitizenService implements ICitizenService {
   private final PasswordEncoder passwordEncoder;
   private final ILawyerService lawyerService;
   private final IRatingService ratingService;
+  private final ModelMapper modelMapper;
 
-  @Override
+    @Override
     public Citizen addCitizen(AddCitizenRequest citizen) {
       boolean exists = citizenRepository.existsByEmailOrPhoneNumber(citizen.getEmail(), citizen.getPhoneNumber());
       if (exists) {
@@ -102,16 +100,16 @@ public class CitizenService implements ICitizenService {
     }
 
     @Override
-    public void changePassword(String oldPassword, String newPassword, UUID citizenId) {
-    Citizen oldCitizen = getCitizenById(citizenId);
+    public void changePassword(ChangePasswordRequest request) {
+    Citizen oldCitizen = getCitizenById(request.getOwnerId());
     if(oldCitizen == null){
       throw new ResourceNotFoundException("Citizen not found");
     }
-    if(!passwordEncoder.matches(oldPassword, oldCitizen.getPassword())){
+    if(!passwordEncoder.matches(request.getOldPassword(), oldCitizen.getPassword())){
       throw new UnauthorizedActionException("Passwords do not match");
     }
 
-    oldCitizen.setPassword(passwordEncoder.encode(newPassword));
+    oldCitizen.setPassword(passwordEncoder.encode(request.getNewPassword()));
     citizenRepository.save(oldCitizen);
     }
 
@@ -126,7 +124,7 @@ public class CitizenService implements ICitizenService {
     }
 
     @Override
-    public Citizen UpdateCitizen(UpdateCitizenRequest citizen, UUID citizenId) {
+    public Citizen updateCitizen(UpdateCitizenRequest citizen, UUID citizenId) {
         return citizenRepository.findById(citizenId)
                 .map(existingCitizen-> updateExistingCitizen(existingCitizen,citizen))
                 .map(citizenRepository::save)
@@ -150,26 +148,36 @@ public class CitizenService implements ICitizenService {
     }
 
     @Override
-    public Citizen findCitizenByPhoneNumberAndPassword(String phoneNumber, String password) {
-        Citizen citizen = citizenRepository.findByPhoneNumber(phoneNumber);
+    public Citizen findCitizenByPhoneNumberAndPassword(PhoneLoginRequest loginRequest) {
+        Citizen citizen = citizenRepository.findByPhoneNumber(loginRequest.getPhoneNumber());
         if(citizen == null){
           throw new ResourceNotFoundException("Citizen not found");
         }
-        if(!passwordEncoder.matches(password, citizen.getPassword())){
+        if(!passwordEncoder.matches(loginRequest.getPassword(), citizen.getPassword())){
           throw new UnauthorizedActionException("Passwords do not match");
         }
         return citizen;
     }
 
     @Override
-    public Citizen findCitizenByEmailAndPassword(String email, String password) {
-        Citizen citizen = citizenRepository.findByEmail(email);
+    public Citizen findCitizenByEmailAndPassword(EmailLoginRequest emailLoginRequest) {
+        Citizen citizen = citizenRepository.findByEmail(emailLoginRequest.getEmail());
         if(citizen == null){
           throw new ResourceNotFoundException("Citizen not found");
         }
-        if(!passwordEncoder.matches(password, citizen.getPassword())){
+        if(!passwordEncoder.matches(emailLoginRequest.getPassword(), citizen.getPassword())){
           throw new UnauthorizedActionException("Passwords do not match");
         }
         return citizen;
+    }
+
+    @Override
+    public CitizenDto convertCitizenToDto(Citizen citizen) {
+        return modelMapper.map(citizen, CitizenDto.class);
+    }
+
+    @Override
+    public List<CitizenDto> getConvertedCitizens(List<Citizen> citizens) {
+        return citizens.stream().map(this::convertCitizenToDto).toList();
     }
 }

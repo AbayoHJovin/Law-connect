@@ -14,11 +14,6 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Citizen extends User {
-
-    @Id
-    @GeneratedValue
-    private UUID id;
-
     @OneToMany(mappedBy = "citizen", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Consultation> consultations;
 
@@ -30,13 +25,4 @@ public class Citizen extends User {
         super(fullName, email, phoneNumber, languagePreference,password,location);
     }
 
-    @Override
-    public UUID getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(UUID id) {
-        this.id = id;
-    }
 }

@@ -1,5 +1,6 @@
 package com.legal.lawconnect.controller;
 
+import com.legal.lawconnect.dto.SpecializationDto;
 import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.model.Specialization;
@@ -19,10 +20,11 @@ public class SpecializationController {
     private final ISpecializationService specializationService;
 
     @PostMapping("/addSpecialization")
-    public ResponseEntity<ApiResponse> addSpecialization(@RequestBody Specialization specialization) {
+    public ResponseEntity<ApiResponse> addSpecialization(@RequestBody String specializationName) {
     try{
-    Specialization sp = specializationService.addSpecialization(specialization);
-    return ResponseEntity.ok(new ApiResponse("Specialization added!", sp));
+    Specialization sp = specializationService.addSpecialization(specializationName);
+    SpecializationDto convertedSp = specializationService.convertSpecializationToDto(sp);
+    return ResponseEntity.ok(new ApiResponse("Specialization added!", convertedSp));
     }catch (AlreadyExistsException e){
         return ResponseEntity.status(401).body(new ApiResponse(e.getMessage(),null));
     }
@@ -32,7 +34,8 @@ public class SpecializationController {
     public ResponseEntity<ApiResponse> updateSpecialization(@RequestBody String newSpecializationName, @PathVariable UUID specializationId) {
         try {
             Specialization updatedSpecialization = specializationService.updateSpecialization(newSpecializationName, specializationId);
-            return ResponseEntity.ok(new ApiResponse("Specialization updated!", updatedSpecialization));
+            SpecializationDto convertedSp = specializationService.convertSpecializationToDto(updatedSpecialization);
+            return ResponseEntity.ok(new ApiResponse("Specialization updated!", convertedSp));
         }catch(ResourceNotFoundException e){
             return ResponseEntity.status(404).body(new ApiResponse(e.getMessage(),null));
         }
@@ -42,7 +45,8 @@ public class SpecializationController {
     public ResponseEntity<ApiResponse> getAllSpecializations() {
     try{
         List<Specialization> allSpecialization = specializationService.getSpecializations();
-        return ResponseEntity.ok(new ApiResponse("All specializations", allSpecialization));
+        List<SpecializationDto> convertedSpecializations = specializationService.getConvertedSpecializations(allSpecialization);
+        return ResponseEntity.ok(new ApiResponse("All specializations", convertedSpecializations));
     }catch(Exception e){
         return ResponseEntity.status(500).body(new ApiResponse(e.getMessage(),null));
     }

@@ -15,10 +15,6 @@ import java.util.UUID;
 @Builder
 public class Lawyer extends User {
 
-    @Id
-    @GeneratedValue
-    private UUID id;
-
     private String licenseNumber;
     private String bio;
     private int yearsOfExperience;
@@ -29,7 +25,7 @@ public class Lawyer extends User {
     @OneToMany(mappedBy = "lawyer" , cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Specialization> specialization;
 
-    @OneToMany(mappedBy = "citizen", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Consultation> consultations;
 
     private Long createdAt;
@@ -42,14 +38,4 @@ public class Lawyer extends User {
         this.specialization = specialization;
     }
 
-
-    @Override
-    public UUID getId() {
-        return id;
-    }
-
-    @Override
-    public void setId(UUID id) {
-        this.id = id;
-    }
 }

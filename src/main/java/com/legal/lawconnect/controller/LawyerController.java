@@ -1,12 +1,16 @@
 package com.legal.lawconnect.controller;
 
+import com.legal.lawconnect.dto.CitizenDto;
+import com.legal.lawconnect.dto.LawyerDto;
 import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
+import com.legal.lawconnect.model.Citizen;
 import com.legal.lawconnect.model.Lawyer;
-import com.legal.lawconnect.requests.AddLawyerRequest;
+import com.legal.lawconnect.requests.*;
 import com.legal.lawconnect.response.ApiResponse;
 import com.legal.lawconnect.services.lawyer.ILawyerService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,11 +23,24 @@ import java.util.UUID;
 public class LawyerController {
     private final ILawyerService lawyerService;
 
+    @PostMapping("/addLawyer")
+    public ResponseEntity<ApiResponse> addLawyer(@RequestBody AddLawyerRequest lawyer) {
+        try{
+            Lawyer lawyerSaved = lawyerService.save(lawyer);
+            LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyerSaved);
+            return ResponseEntity.ok(new ApiResponse("success", lawyerSaved));
+        }catch(AlreadyExistsException e){
+            return ResponseEntity.status(401).body(new ApiResponse("error", e.getMessage()));
+        }
+    }
+
+
     @GetMapping("/getall")
     public ResponseEntity<ApiResponse> getAllLawyers() {
         try {
             List<Lawyer> lawyers = lawyerService.findAll();
-            return ResponseEntity.ok(new ApiResponse("success", lawyers));
+            List<LawyerDto> convertedLawyers = lawyerService.getConvertedLawyers(lawyers);
+            return ResponseEntity.ok(new ApiResponse("success", convertedLawyers));
         }catch (Exception e){
             return ResponseEntity.status(500).body(new ApiResponse("error", e.getMessage()));
         }
@@ -34,7 +51,8 @@ public class LawyerController {
         try {
             UUID uuid = UUID.fromString(id);
             Lawyer lawyer = lawyerService.findById((uuid));
-            return ResponseEntity.ok(new ApiResponse("success", lawyer));
+            LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
+            return ResponseEntity.ok(new ApiResponse("success", convertedLawyer));
         }catch (Exception e){
             return ResponseEntity.status(500).body(new ApiResponse("error", e.getMessage()));
         }
@@ -44,7 +62,8 @@ public class LawyerController {
     public ResponseEntity<ApiResponse> findLawyerByEmail(@PathVariable("email") String email) {
         try {
             Lawyer lawyer = lawyerService.findByEmail((email));
-            return ResponseEntity.ok(new ApiResponse("success", lawyer));
+            LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
+            return ResponseEntity.ok(new ApiResponse("success", convertedLawyer));
         }catch (Exception e){
             return ResponseEntity.status(500).body(new ApiResponse("error", e.getMessage()));
         }
@@ -54,9 +73,21 @@ public class LawyerController {
     public ResponseEntity<ApiResponse> findLawyerByPhone(@PathVariable("phone") String phone) {
         try {
             Lawyer lawyer = lawyerService.findByPhone(phone);
-            return ResponseEntity.ok(new ApiResponse("success", lawyer));
+            LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
+            return ResponseEntity.ok(new ApiResponse("success", convertedLawyer));
         }catch (Exception e){
             return ResponseEntity.status(500).body(new ApiResponse("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/update/{lawyerId}")
+    public ResponseEntity<ApiResponse> updateLawyer(@RequestBody UpdateLawyerRequest request, @PathVariable UUID lawyerId){
+        try{
+            Lawyer lawyer = lawyerService.updateLawyer(request, lawyerId);
+            LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
+            return ResponseEntity.ok(new ApiResponse("Lawyer Updated successfully", convertedLawyer));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(), null));
         }
     }
 
@@ -71,15 +102,6 @@ public class LawyerController {
         }
     }
 
-    @PostMapping("/addLawyer")
-    public ResponseEntity<ApiResponse> addLawyer(@RequestBody AddLawyerRequest lawyer) {
-        try{
-            Lawyer lawyerSaved = lawyerService.save(lawyer);
-            return ResponseEntity.ok(new ApiResponse("success", lawyerSaved));
-        }catch(AlreadyExistsException e){
-            return ResponseEntity.status(401).body(new ApiResponse("error", e.getMessage()));
-        }
-    }
 
     @PutMapping("/changeAvailability")
     public ResponseEntity<ApiResponse> changeAvailabilityForWork(@RequestParam boolean availability, @RequestParam UUID lawyerId) {
@@ -90,5 +112,87 @@ public class LawyerController {
             return ResponseEntity.status(404).body(new ApiResponse(e.getMessage(), null));
         }
     }
+
+    @PostMapping("/phone-login")
+    public ResponseEntity<ApiResponse> phoneLogin (@RequestBody PhoneLoginRequest phoneLoginRequest) {
+        try{
+            Lawyer lawyer = lawyerService.findLawyerByPhoneAndPassword(phoneLoginRequest);
+            LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
+            return ResponseEntity.ok(new ApiResponse("Success", convertedLawyer));
+        }catch (ResourceNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
+
+
+    @PostMapping("/email-login")
+    public ResponseEntity<ApiResponse> EmailLogin (@RequestBody EmailLoginRequest emailLoginRequest) {
+        try{
+            Lawyer lawyer = lawyerService.findLawyerByEmailAndPassword(emailLoginRequest);
+            LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
+            return ResponseEntity.ok(new ApiResponse("Success", convertedLawyer));
+        }catch (ResourceNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
+
+    @GetMapping("/find-rating-below/{ratingValue}")
+    public ResponseEntity<ApiResponse> findRatingBelow(@PathVariable int ratingValue){
+        try{
+            List<Lawyer> lawyers = lawyerService.findLawyersByRatingScoresBelow(ratingValue);
+            List<LawyerDto> lawyerDtos = lawyerService.getConvertedLawyers(lawyers);
+            return ResponseEntity.ok(new ApiResponse("Success", lawyerDtos));
+        }
+        catch (RuntimeException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
+
+    @GetMapping("/find-rating-above/{ratingValue}")
+    public ResponseEntity<ApiResponse> findRatingAbove(@PathVariable int ratingValue){
+        try{
+            List<Lawyer> lawyers = lawyerService.findLawyersByRatingScoresAbove(ratingValue);
+            List<LawyerDto> lawyerDtos = lawyerService.getConvertedLawyers(lawyers);
+            return ResponseEntity.ok(new ApiResponse("Success", lawyerDtos));
+        }
+        catch (RuntimeException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
+
+
+    @GetMapping("/find-rating-equals-to/{ratingValue}")
+    public ResponseEntity<ApiResponse> findRatingEqualsTo(@PathVariable int ratingValue){
+        try{
+            List<Lawyer> lawyers = lawyerService.findLawyersByRatingScoresEqualsTo(ratingValue);
+            List<LawyerDto> lawyerDtos = lawyerService.getConvertedLawyers(lawyers);
+            return ResponseEntity.ok(new ApiResponse("Success", lawyerDtos));
+        }
+        catch (RuntimeException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
+
+    @PutMapping("/changeLanguage/{lawyerId}")
+    public ResponseEntity<ApiResponse> changeLanguagePreference(@RequestParam String newLanguage, @PathVariable UUID lawyerId){
+        try{
+            lawyerService.changeLanguagePreference(newLanguage, lawyerId);
+            return ResponseEntity.ok(new ApiResponse("Language preference changed Successfully", null));
+        }catch(ResourceNotFoundException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
+        }
+
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse> updatePassword(@RequestBody ChangePasswordRequest request){
+        try {
+            lawyerService.changePassword(request);
+            return ResponseEntity.ok(new ApiResponse("Password changed Successfully", null));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
+
 
 }

@@ -1,5 +1,8 @@
 package com.legal.lawconnect.services.lawyer;
 
+import com.legal.lawconnect.dto.CitizenDto;
+import com.legal.lawconnect.dto.LawyerDto;
+import com.legal.lawconnect.dto.SpecializationDto;
 import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.exceptions.UnauthorizedActionException;
@@ -8,13 +11,14 @@ import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.model.Specialization;
 import com.legal.lawconnect.repository.LawyerRepository;
 import com.legal.lawconnect.repository.SpecializationRepository;
-import com.legal.lawconnect.requests.AddLawyerRequest;
-import com.legal.lawconnect.requests.UpdateCitizenRequest;
-import com.legal.lawconnect.requests.UpdateLawyerRequest;
+import com.legal.lawconnect.requests.*;
+import com.legal.lawconnect.services.specialization.SpecializationService;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,6 +30,8 @@ public class LawyerService implements ILawyerService {
     private final LawyerRepository lawyerRepository;
     private final SpecializationRepository specializationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SpecializationService specializationService;
+    private final ModelMapper modelMapper;
 
     @Override
     public Lawyer save(AddLawyerRequest lawyer) {
@@ -91,14 +97,24 @@ public class LawyerService implements ILawyerService {
                 .orElseThrow(()-> new ResourceNotFoundException("Lawyer not found!"));
     }
 
-    private Lawyer updateExistingLawyer(Lawyer existingLawyer, UpdateLawyerRequest request){existingLawyer.setFullName(request.getFullName());
+    private Lawyer updateExistingLawyer(Lawyer existingLawyer, UpdateLawyerRequest request){
+       existingLawyer.setFullName(request.getFullName());
        existingLawyer.setEmail(request.getEmail());
        existingLawyer.setPhoneNumber(request.getPhoneNumber());
        existingLawyer.setLanguagePreference(request.getLanguagePreference());
        existingLawyer.setLicenseNumber(request.getLicenseNumber());
        existingLawyer.setYearsOfExperience(request.getYearsOfExperience());
        existingLawyer.setLocation(request.getLocation());
-       existingLawyer.setSpecialization(request.getSpecialization());
+       List<SpecializationRequest> specialization = request.getSpecialization();
+       List<Specialization> specializationList = new ArrayList<Specialization>();
+       specialization.forEach(s -> {
+           Specialization exists = specializationRepository.findByName(s.getSpecializationName());
+           if (exists == null) {
+           exists = specializationService.addSpecialization(s.getSpecializationName());
+           }
+           specializationList.add(exists);
+       });
+       existingLawyer.setSpecialization(specializationList);
        return existingLawyer;
     }
 
@@ -121,25 +137,25 @@ public class LawyerService implements ILawyerService {
     }
 
     @Override
-    public Lawyer findLawyerByEmailAndPassword(String email, String password) {
-        Lawyer lawyer = lawyerRepository.findByEmail(email);
+    public Lawyer findLawyerByEmailAndPassword(EmailLoginRequest request) {
+        Lawyer lawyer = lawyerRepository.findByEmail(request.getEmail());
         if(lawyer == null){
             throw new ResourceNotFoundException("Lawyer not found");
         }
-        if(!passwordEncoder.matches(password, lawyer.getPassword())){
+        if(!passwordEncoder.matches(request.getPassword(), lawyer.getPassword())){
             throw new UnauthorizedActionException("Passwords do not match");
         }
         return lawyer;
     }
 
     @Override
-    public Lawyer findLawyerByPhoneAndPassword(String phone, String password) {
+    public Lawyer findLawyerByPhoneAndPassword(PhoneLoginRequest request) {
 
-        Lawyer lawyer = lawyerRepository.findByPhoneNumber(phone);
+        Lawyer lawyer = lawyerRepository.findByPhoneNumber(request.getPhoneNumber());
         if(lawyer == null){
             throw new ResourceNotFoundException("Citizen not found");
         }
-        if(!passwordEncoder.matches(password, lawyer.getPassword())){
+        if(!passwordEncoder.matches(request.getPassword(), lawyer.getPassword())){
             throw new UnauthorizedActionException("Passwords do not match");
         }
         return lawyer;
@@ -170,15 +186,31 @@ public class LawyerService implements ILawyerService {
     }
 
     @Override
-    public void changePassword(String oldPassword, String newPassword, UUID lawyerId) {
-        Lawyer oldLawyer = lawyerRepository.findById(lawyerId)
+    public void changePassword(ChangePasswordRequest request) {
+        Lawyer oldLawyer = lawyerRepository.findById(request.getOwnerId())
                 .orElseThrow(()-> new ResourceNotFoundException("Lawyer not found"));
 
-        if(!passwordEncoder.matches(oldPassword, oldLawyer.getPassword())){
+        if(!passwordEncoder.matches(request.getOldPassword(), oldLawyer.getPassword())){
             throw new UnauthorizedActionException("Passwords do not match");
         }
 
-        oldLawyer.setPassword(passwordEncoder.encode(newPassword));
+        oldLawyer.setPassword(passwordEncoder.encode(request.getNewPassword()));
         lawyerRepository.save(oldLawyer);
+    }
+
+    @Override
+    public LawyerDto convertLawyerToDto(Lawyer lawyer) {
+        LawyerDto lawyerDto = modelMapper.map(lawyer, LawyerDto.class);
+        List<Specialization> specializations = specializationRepository.findSpecializationByLawyer_Id(lawyer.getId());
+        List<SpecializationDto> specializationDtos = specializations.stream()
+                .map(image -> modelMapper.map(image, SpecializationDto.class))
+                .toList();
+        lawyerDto.setSpecializations(specializationDtos);
+        return lawyerDto;
+    }
+
+    @Override
+    public List<LawyerDto> getConvertedLawyers(List<Lawyer> lawyers) {
+        return lawyers.stream().map(this::convertLawyerToDto).toList();
     }
 }
