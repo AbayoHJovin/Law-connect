@@ -35,8 +35,8 @@ public class CitizenController {
             Citizen theCitizen = citizenService.addCitizen(citizen);
             CitizenDto convertedCitizen = citizenService.convertCitizenToDto(theCitizen);
             return ResponseEntity.ok(new ApiResponse("Success", convertedCitizen));
-        }catch(AlreadyExistsException e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
+        }catch(RuntimeException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(), null));
         }
     }
     @GetMapping("/all")

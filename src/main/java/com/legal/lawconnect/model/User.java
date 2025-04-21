@@ -25,6 +25,7 @@ public class User {
     @Column(nullable = true, unique = true)
     private String phoneNumber;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRoles role;
 
@@ -38,7 +39,4 @@ public class User {
         this.location = location;
         this.role = role;
     }
-
-
-
 }

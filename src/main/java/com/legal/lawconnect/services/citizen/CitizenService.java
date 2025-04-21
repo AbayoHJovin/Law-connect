@@ -33,6 +33,9 @@ public class CitizenService implements ICitizenService {
 
     @Override
     public Citizen addCitizen(AddCitizenRequest citizen) {
+        if (citizen.getEmail() == null && citizen.getPhoneNumber() == null) {
+            throw new IllegalArgumentException("Either email or phoneNumber must be provided");
+        }
       boolean exists = citizenRepository.existsByEmailOrPhoneNumber(citizen.getEmail(), citizen.getPhoneNumber());
       if (exists) {
         throw new AlreadyExistsException("Citizen already exists");
