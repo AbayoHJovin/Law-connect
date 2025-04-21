@@ -2,6 +2,7 @@ package com.legal.lawconnect.configuration;
 
 import com.legal.lawconnect.services.UserDetailsServiceImpl;
 import com.legal.lawconnect.util.JwtUtil;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,9 +28,16 @@ import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 
 @Configuration
 public class AppConfig {
-    UserDetailsServiceImpl userDetailsService;
-    private JwtUtil jwtUtil;
-    private PasswordEncoder passwordEncoder;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
+
+    @Autowired
+    public AppConfig(UserDetailsServiceImpl userDetailsService, JwtUtil jwtUtil, PasswordEncoder passwordEncoder) {
+        this.userDetailsService = userDetailsService;
+        this.jwtUtil = jwtUtil;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Bean
     public ModelMapper modelMapper() {
@@ -37,15 +45,9 @@ public class AppConfig {
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
-
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -58,7 +60,6 @@ public class AppConfig {
                         .requestMatchers(
                                 new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/login-by-(phone|email)$", null),
                                 new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/(add|all|get-by-id|find-by-phone|find-by-email)$", null)
-
                         ).permitAll()
                         .requestMatchers("/api/v1/citizens/cit-adm/**").hasAnyRole("ADMIN", "CITIZEN")
                         .requestMatchers("/api/v1/lawyers/lawy-adm/**").hasAnyRole("ADMIN", "LAWYER")
@@ -75,7 +76,6 @@ public class AppConfig {
                 .build();
     }
 
-
     @Bean
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -83,5 +83,4 @@ public class AppConfig {
         provider.setPasswordEncoder(passwordEncoder);
         return provider;
     }
-
 }
