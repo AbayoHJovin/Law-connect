@@ -1,5 +1,6 @@
 package com.legal.lawconnect.model;
 
+import com.legal.lawconnect.enums.UserRoles;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -37,8 +38,8 @@ public class Lawyer extends User {
     private Long createdAt;
     private Long updatedAt;
 
-    public Lawyer(String fullName, String password,String email, String phoneNumber, String languagePreference, String licenseNumber, int yearsOfExperience, String location, List<Specialization> specialization) {
-        super(fullName,email,phoneNumber, languagePreference,password,location);
+    public Lawyer(String fullName, String password, String email, String phoneNumber, String languagePreference, String licenseNumber, int yearsOfExperience, String location, List<Specialization> specialization, UserRoles role) {
+        super(fullName,email,phoneNumber, languagePreference,password,location,role);
         this.licenseNumber = licenseNumber;
         this.yearsOfExperience = yearsOfExperience;
         this.specialization = specialization;

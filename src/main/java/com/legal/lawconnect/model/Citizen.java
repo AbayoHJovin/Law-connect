@@ -1,5 +1,6 @@
 package com.legal.lawconnect.model;
 
+import com.legal.lawconnect.enums.UserRoles;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,8 +21,8 @@ public class Citizen extends User {
     private List<Rating> ratings;
 
 
-    public Citizen(String fullName, String email, String phoneNumber, String languagePreference, String password, String location) {
-        super(fullName, email, phoneNumber, languagePreference,password,location);
+    public Citizen(String fullName, String email, String phoneNumber, String languagePreference, String password, String location, UserRoles role) {
+        super(fullName, email, phoneNumber, languagePreference,password,location,role);
     }
 
 }

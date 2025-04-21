@@ -42,7 +42,7 @@ public class CitizenController {
         }
     }
 
-    @GetMapping("/get-citizen-by-id/{citizenId}")
+    @GetMapping("/get-by-id/{citizenId}")
     public ResponseEntity<ApiResponse> getCitizenById(@PathVariable("citizenId") UUID citizenId) {
         try{
             Citizen citizen = citizenService.getCitizenById(citizenId);
@@ -53,7 +53,7 @@ public class CitizenController {
         }
     }
 
-    @GetMapping("/get-citizen-by-location")
+    @GetMapping("/find-by-location")
     public ResponseEntity<ApiResponse> getCitizensByLocation(@RequestParam("location") String location) {
         try{
             List<Citizen> citizen = citizenService.getCitizensByLocation(location);
@@ -64,7 +64,7 @@ public class CitizenController {
         }
     }
 
-    @GetMapping("/get-citizen-by-phone")
+    @GetMapping("/find-by-phone")
     public ResponseEntity<ApiResponse> getCitizensByPhone(@RequestParam("phone") String phone) {
         try{
             Citizen citizen = citizenService.getCitizenByPhoneNumber(phone);
@@ -75,7 +75,7 @@ public class CitizenController {
         }
     }
 
-    @GetMapping("/get-citizen-by-email")
+    @GetMapping("/find-by-email")
     public ResponseEntity<ApiResponse> getCitizenByEmail(@RequestParam("email") String email) {
         try{
             Citizen citizen = citizenService.getCitizenByEmail(email);
@@ -86,7 +86,7 @@ public class CitizenController {
         }
     }
 
-    @PostMapping("/rate-lawyer")
+    @PostMapping("/cit/rate-lawyer")
     public ResponseEntity<ApiResponse> rateLawyer(@RequestBody AddRatingRequest request){
         try {
             citizenService.rateLawyer(request);
@@ -96,7 +96,7 @@ public class CitizenController {
         }
     }
 
-    @PutMapping("/change-password")
+    @PutMapping("/cit/change-password")
     public ResponseEntity<ApiResponse> updatePassword(@RequestBody ChangePasswordRequest request){
         try {
             citizenService.changePassword(request);
@@ -106,7 +106,7 @@ public class CitizenController {
         }
     }
 
-    @PutMapping("/changeLanguage/{citizenId}")
+    @PutMapping("/cit/changeLanguage/{citizenId}")
     public ResponseEntity<ApiResponse> changeLanguage(@RequestParam String newLanguage, @PathVariable UUID citizenId){
         try{
             citizenService.changeLanguagePreference(newLanguage, citizenId);
@@ -117,7 +117,7 @@ public class CitizenController {
 
     }
 
-    @PatchMapping("/update-citizen")
+    @PatchMapping("/cit/update-citizen")
     public ResponseEntity<ApiResponse> updateCitizen(@RequestBody UpdateCitizenRequest request){
         try {
             Citizen cit = citizenService.updateCitizen(request, request.getCitizenId());
@@ -128,7 +128,7 @@ public class CitizenController {
         }
     }
 
-    @DeleteMapping("/deleteCitizen/{citizenId}")
+    @DeleteMapping("cit-adm/deleteCitizen/{citizenId}")
     public ResponseEntity<ApiResponse> deleteCitizen(@PathVariable UUID citizenId){
         try {
             citizenService.deleteCitizen(citizenId);

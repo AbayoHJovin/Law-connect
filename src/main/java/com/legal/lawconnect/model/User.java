@@ -1,5 +1,6 @@
 package com.legal.lawconnect.model;
 
+import com.legal.lawconnect.enums.UserRoles;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.*;
 import lombok.*;
@@ -24,12 +25,19 @@ public class User {
     @Column(nullable = true, unique = true)
     private String phoneNumber;
 
-    public User(String fullName, String email, String phoneNumber, String languagePreference, String password, String location) {
+    @Column(nullable = false)
+    private UserRoles role;
+
+    public User(String fullName, String email, String phoneNumber, String languagePreference, String password, String location, UserRoles role) {
         this.fullName = fullName;
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.languagePreference = languagePreference;
         this.password = password;
         this.location = location;
+        this.role = role;
     }
+
+
+
 }

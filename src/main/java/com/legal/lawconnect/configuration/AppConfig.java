@@ -1,0 +1,75 @@
+package com.legal.lawconnect.configuration;
+
+import com.legal.lawconnect.services.UserDetailsServiceImpl;
+import com.legal.lawconnect.util.JwtUtil;
+import org.modelmapper.ModelMapper;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
+
+@Configuration
+public class AppConfig {
+    UserDetailsServiceImpl userDetailsService;
+    private JwtUtil jwtUtil;
+
+    @Bean
+    public ModelMapper modelMapper() {
+        return new ModelMapper();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        JwtFilter jwtFilter = new JwtFilter(userDetailsService, jwtUtil);
+
+        return http
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/login-by-(phone|email)$", null),
+                                new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/(add|all|get-by-id|find-by-phone|find-by-email)$", null)
+
+                        ).permitAll()
+                        .requestMatchers("/api/v1/citizens/cit-adm/**").hasAnyRole("ADMIN", "CITIZEN")
+                        .requestMatchers("/api/v1/lawyers/lawy-adm/**").hasAnyRole("ADMIN", "LAWYER")
+                        .requestMatchers(
+                                new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/adm/.*$", null),
+                                new RegexRequestMatcher("^/api/v1/specializations/.*$", null)
+                        ).hasRole("ADMIN")
+                        .requestMatchers("/api/v1/citizens/cit").hasRole("CITIZEN")
+                        .requestMatchers("/api/v1/lawyers/lawy").hasRole("LAWYER")
+                        .requestMatchers("/api/v1/consultations/lawy-cit").hasAnyRole("CITIZEN","LAWYER")
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .build();
+    }
+
+}

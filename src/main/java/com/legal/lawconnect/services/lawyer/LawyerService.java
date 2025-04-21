@@ -3,6 +3,7 @@ package com.legal.lawconnect.services.lawyer;
 import com.legal.lawconnect.dto.CitizenDto;
 import com.legal.lawconnect.dto.LawyerDto;
 import com.legal.lawconnect.dto.SpecializationDto;
+import com.legal.lawconnect.enums.UserRoles;
 import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.exceptions.UnauthorizedActionException;
@@ -44,40 +45,44 @@ public class LawyerService implements ILawyerService {
             throw new AlreadyExistsException("Lawyer already exists!");
         }
 
-        // Reuse specialization resolution logic
-        List<Specialization> specializationList = resolveSpecializations(lawyer.getSpecialization());
+        // Resolve only valid specializations and collect invalid ones
+        List<String> invalidSpecializations = new ArrayList<>();
+        List<Specialization> specializationList = resolveValidSpecializations(lawyer.getSpecialization(), invalidSpecializations);
 
-        // Create and save the new lawyer
         Lawyer newLawyer = createLawyer(lawyer, specializationList);
         return lawyerRepository.save(newLawyer);
+
     }
 
     private Lawyer createLawyer(AddLawyerRequest request, List<Specialization> specialization){
         String hashedPassword = passwordEncoder.encode(request.getPassword());
-    return new Lawyer(
-            request.getFullName(),
-            hashedPassword,
-            request.getEmail(),
-            request.getPhoneNumber(),
-            request.getLanguagePreference(),
-            request.getLicenseNumber(),
-            request.getYearsOfExperience(),
-            request.getLocation(),
-            specialization
-            );
+        return new Lawyer(
+                request.getFullName(),
+                hashedPassword,
+                request.getEmail(),
+                request.getPhoneNumber(),
+                request.getLanguagePreference(),
+                request.getLicenseNumber(),
+                request.getYearsOfExperience(),
+                request.getLocation(),
+                specialization,
+                UserRoles.LAWYER
+        );
     }
-    private List<Specialization> resolveSpecializations(List<SpecializationRequest> specializationRequests) {
-        List<Specialization> specializationList = new ArrayList<>();
+
+    private List<Specialization> resolveValidSpecializations(List<SpecializationRequest> specializationRequests, List<String> invalids) {
+        List<Specialization> validSpecializations = new ArrayList<>();
 
         for (SpecializationRequest s : specializationRequests) {
-            Specialization exists = specializationRepository.findByName(s.getSpecializationName());
-            if (exists == null) {
-                exists = specializationService.addSpecialization(s.getSpecializationName());
+            Specialization specialization = specializationRepository.findByName(s.getSpecializationName());
+            if (specialization != null) {
+                validSpecializations.add(specialization);
+            } else {
+                invalids.add(s.getSpecializationName());
             }
-            specializationList.add(exists);
         }
 
-        return specializationList;
+        return validSpecializations;
     }
 
     @Override
@@ -110,10 +115,13 @@ public class LawyerService implements ILawyerService {
         Lawyer existingLawyer = lawyerRepository.findById(request.getLawyerId())
                 .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found with ID: " + request.getLawyerId()));
 
-        updateExistingLawyer(existingLawyer, request);
+        List<String> invalidSpecializations = new ArrayList<>();
+        updateExistingLawyer(existingLawyer, request, invalidSpecializations);
         return lawyerRepository.save(existingLawyer);
+
     }
-    private void updateExistingLawyer(Lawyer existingLawyer, UpdateLawyerRequest request) {
+
+    private void updateExistingLawyer(Lawyer existingLawyer, UpdateLawyerRequest request, List<String> invalidSpecializations) {
         Optional.ofNullable(request.getFullName()).ifPresent(existingLawyer::setFullName);
         Optional.ofNullable(request.getEmail()).ifPresent(existingLawyer::setEmail);
         Optional.ofNullable(request.getPhoneNumber()).ifPresent(existingLawyer::setPhoneNumber);
@@ -123,16 +131,21 @@ public class LawyerService implements ILawyerService {
         Optional.ofNullable(request.getLocation()).ifPresent(existingLawyer::setLocation);
 
         if (request.getSpecialization() != null && !request.getSpecialization().isEmpty()) {
-            List<Specialization> specializationList = request.getSpecialization().stream()
-                    .map(s -> {
-                        Specialization existing = specializationRepository.findByName(s.getSpecializationName());
-                        return existing != null ? existing : specializationService.addSpecialization(s.getSpecializationName());
-                    })
-                    .collect(Collectors.toList());
+            List<Specialization> validSpecializations = new ArrayList<>();
 
-            existingLawyer.setSpecialization(specializationList);
+            for (SpecializationRequest s : request.getSpecialization()) {
+                Specialization specialization = specializationRepository.findByName(s.getSpecializationName());
+                if (specialization != null) {
+                    validSpecializations.add(specialization);
+                } else {
+                    invalidSpecializations.add(s.getSpecializationName());
+                }
+            }
+
+            existingLawyer.setSpecialization(validSpecializations);
         }
     }
+
 
     @Override
     public void deleteLawyer(UUID id) {

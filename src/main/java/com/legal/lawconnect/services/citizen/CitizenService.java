@@ -1,5 +1,6 @@
 package com.legal.lawconnect.services.citizen;
 
+import com.legal.lawconnect.enums.UserRoles;
 import com.legal.lawconnect.requests.*;
 import org.modelmapper.ModelMapper;
 import com.legal.lawconnect.dto.CitizenDto;
@@ -12,6 +13,8 @@ import com.legal.lawconnect.repository.CitizenRepository;
 import com.legal.lawconnect.services.lawyer.ILawyerService;
 import com.legal.lawconnect.services.rating.IRatingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +24,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class CitizenService implements ICitizenService {
+
   private final CitizenRepository citizenRepository;
   private final PasswordEncoder passwordEncoder;
   private final ILawyerService lawyerService;
@@ -45,7 +49,8 @@ public class CitizenService implements ICitizenService {
                 citizen.getPhoneNumber(),
                 citizen.getLanguagePreference(),
                 hashedPassword,
-                citizen.getLocation()
+                citizen.getLocation(),
+                UserRoles.CITIZEN
         );
     }
     @Override

@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("${api.prefix}/consultations")
+@RequestMapping("${api.prefix}/consultations/lawy-cit/")
 public class ConsultationController {
     private final IConsultationService consultationService;
 

@@ -30,7 +30,7 @@ public class SpecializationController {
     }
     }
 
-    @PutMapping("/updateSpecialization/{specializationId}")
+    @PutMapping("/lawy-adm/updateSpecialization/{specializationId}")
     public ResponseEntity<ApiResponse> updateSpecialization(@RequestBody String newSpecializationName, @PathVariable UUID specializationId) {
         try {
             Specialization updatedSpecialization = specializationService.updateSpecialization(newSpecializationName, specializationId);

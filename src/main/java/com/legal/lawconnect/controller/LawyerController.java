@@ -20,7 +20,7 @@ import java.util.UUID;
 public class LawyerController {
     private final ILawyerService lawyerService;
 
-    @PostMapping("/add-lawyer")
+    @PostMapping("/add")
     public ResponseEntity<ApiResponse> addLawyer(@RequestBody AddLawyerRequest lawyer) {
         try{
             Lawyer lawyerSaved = lawyerService.save(lawyer);
@@ -32,7 +32,7 @@ public class LawyerController {
     }
 
 
-    @GetMapping("/getall")
+    @GetMapping("/all")
     public ResponseEntity<ApiResponse> getAllLawyers() {
         try {
             List<Lawyer> lawyers = lawyerService.findAll();
@@ -43,7 +43,7 @@ public class LawyerController {
         }
     }
 
-    @GetMapping("/find/{id}")
+    @GetMapping("/find-by-id/{id}")
     public ResponseEntity<ApiResponse> findLawyerById(@PathVariable UUID id) {
         try {
             Lawyer lawyer = lawyerService.findById(id);
@@ -76,7 +76,7 @@ public class LawyerController {
         }
     }
 
-    @PatchMapping("/update")
+    @PatchMapping("/lawy/update")
     public ResponseEntity<ApiResponse> updateLawyer(@RequestBody UpdateLawyerRequest request){
         try{
             Lawyer lawyer = lawyerService.updateLawyer(request);
@@ -87,7 +87,7 @@ public class LawyerController {
         }
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/lawy-adm/delete/{id}")
     public ResponseEntity<ApiResponse> deleteLawyerById(@PathVariable("id") String id) {
         try {
             UUID uuid = UUID.fromString(id);
@@ -99,7 +99,7 @@ public class LawyerController {
     }
 
 
-    @PutMapping("/changeAvailability")
+    @PutMapping("/lawy/changeAvailability")
     public ResponseEntity<ApiResponse> changeAvailabilityForWork(@RequestParam boolean availability, @RequestParam UUID lawyerId) {
         try{
             lawyerService.setAvailabilityForWork(lawyerId, availability);
@@ -109,7 +109,7 @@ public class LawyerController {
         }
     }
 
-    @PostMapping("/phone-login")
+    @PostMapping("/login-by-phone")
     public ResponseEntity<ApiResponse> phoneLogin (@RequestBody PhoneLoginRequest phoneLoginRequest) {
         try{
             Lawyer lawyer = lawyerService.findLawyerByPhoneAndPassword(phoneLoginRequest);
@@ -121,7 +121,7 @@ public class LawyerController {
     }
 
 
-    @PostMapping("/email-login")
+    @PostMapping("/login-by-email")
     public ResponseEntity<ApiResponse> emailLogin(@RequestBody EmailLoginRequest emailLoginRequest) {
         try{
             Lawyer lawyer = lawyerService.findLawyerByEmailAndPassword(emailLoginRequest);
@@ -169,7 +169,7 @@ public class LawyerController {
         }
     }
 
-    @PutMapping("/changeLanguage/{lawyerId}")
+    @PutMapping("/lawy/changeLanguage/{lawyerId}")
     public ResponseEntity<ApiResponse> changeLanguagePreference(@RequestParam String newLanguage, @PathVariable UUID lawyerId){
         try{
             lawyerService.changeLanguagePreference(newLanguage, lawyerId);
@@ -180,7 +180,7 @@ public class LawyerController {
 
     }
 
-    @PutMapping("/change-password")
+    @PutMapping("/lawy/change-password")
     public ResponseEntity<ApiResponse> updatePassword(@RequestBody ChangePasswordRequest request){
         try {
             lawyerService.changePassword(request);
@@ -189,6 +189,4 @@ public class LawyerController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),null));
         }
     }
-
-
 }
