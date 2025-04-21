@@ -5,14 +5,20 @@ import com.legal.lawconnect.dto.CitizenDto;
 import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.model.Citizen;
+import com.legal.lawconnect.model.RefreshToken;
 import com.legal.lawconnect.requests.*;
 import com.legal.lawconnect.response.ApiResponse;
+import com.legal.lawconnect.services.auth.AuthService;
 import com.legal.lawconnect.services.citizen.ICitizenService;
+import com.legal.lawconnect.util.JwtUtil;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -20,6 +26,8 @@ import java.util.UUID;
 @RequestMapping("${api.prefix}/citizens")
 public class CitizenController {
     private final ICitizenService citizenService;
+    private final JwtUtil jwtUtil;
+    private final AuthService authService;
 
     @PostMapping("/add")
     public ResponseEntity<ApiResponse> addCitizen(@RequestBody AddCitizenRequest citizen) {
@@ -150,11 +158,29 @@ public class CitizenController {
     }
 
     @PostMapping("/login-by-email")
-    public ResponseEntity<ApiResponse> loginByEmail(@RequestBody EmailLoginRequest request){
+    public ResponseEntity<?> loginByEmail(@RequestBody EmailLoginRequest request, HttpServletResponse response){
         try{
             Citizen citizen = citizenService.findCitizenByEmailAndPassword(request);
             CitizenDto convertedCitizen = citizenService.convertCitizenToDto(citizen);
-            return ResponseEntity.ok(new ApiResponse("Success", convertedCitizen));
+            String accessToken = jwtUtil.generateToken(convertedCitizen.getId());
+            RefreshToken refreshToken = authService.createRefreshTokenByCitizen(citizen);
+            Cookie accessCookie = new Cookie("access_token", accessToken);
+            accessCookie.setHttpOnly(true);
+            accessCookie.setPath("/");
+            accessCookie.setMaxAge(15 * 60); // 15 min
+
+            Cookie refreshCookie = new Cookie("refresh_token", refreshToken.getToken());
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
+
+            response.addCookie(accessCookie);
+            response.addCookie(refreshCookie);
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", accessToken,
+                    "refreshToken", refreshToken,
+                    "citizen", convertedCitizen
+            ));
         }catch (ResourceNotFoundException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
         }

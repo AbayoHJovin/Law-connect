@@ -37,6 +37,8 @@ public class Lawyer extends User {
 
     private Long createdAt;
     private Long updatedAt;
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    private RefreshToken refreshToken;
 
     public Lawyer(String fullName, String password, String email, String phoneNumber, String languagePreference, String licenseNumber, int yearsOfExperience, String location, List<Specialization> specialization, UserRoles role) {
         super(fullName,email,phoneNumber, languagePreference,password,location,role);

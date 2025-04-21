@@ -28,6 +28,7 @@ public class User {
     @Column(nullable = false)
     private UserRoles role;
 
+
     public User(String fullName, String email, String phoneNumber, String languagePreference, String password, String location, UserRoles role) {
         this.fullName = fullName;
         this.email = email;

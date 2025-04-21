@@ -6,6 +6,8 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.UUID;
+
 import io.jsonwebtoken.*;
 
 import javax.crypto.SecretKey;
@@ -19,11 +21,11 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
     // Generate token with username
-    public String generateToken(String username) {
+    public String generateToken(UUID userId) {
         // 15 minutes
         long expirationMs = 1000 * 60 * 15;
         return Jwts.builder()
-                .subject(username)
+                .subject(String.valueOf(userId))
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSignKey() , Jwts.SIG.HS256)
@@ -34,7 +36,19 @@ public class JwtUtil {
     public String getUserFromToken(String token) {
         return Jwts.parser().verifyWith(getSignKey()).build().parseSignedClaims(token).getPayload().getSubject();
     }
+    public Long extractUserId(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSignKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
 
+            return Long.parseLong(claims.getSubject());
+        } catch (Exception e) {
+            return null;
+        }
+    }
     public boolean validateToken(String token) {
         try {
             Jwts.parser().verifyWith(getSignKey()).build().parseSignedClaims(token);
