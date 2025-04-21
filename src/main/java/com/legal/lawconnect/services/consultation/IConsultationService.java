@@ -1,5 +1,6 @@
 package com.legal.lawconnect.services.consultation;
 
+import com.legal.lawconnect.dto.ConsultationDto;
 import com.legal.lawconnect.model.Consultation;
 import com.legal.lawconnect.requests.CreateConsultationRequest;
 import com.legal.lawconnect.requests.UpdateConsultationRequest;
@@ -26,4 +27,7 @@ public interface IConsultationService {
 
     // Deletion
     void deleteConsultation(UUID consultationId, UUID lawyerId);
+
+    ConsultationDto convertToDto(Consultation consultation);
+    List<ConsultationDto> getConvertedConsultations(List<Consultation> consultations);
 }

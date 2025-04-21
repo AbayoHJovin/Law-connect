@@ -1,5 +1,7 @@
 package com.legal.lawconnect.services.consultation;
 
+import com.legal.lawconnect.dto.CitizenDto;
+import com.legal.lawconnect.dto.ConsultationDto;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.exceptions.UnauthorizedActionException;
 import com.legal.lawconnect.model.Citizen;
@@ -12,6 +14,7 @@ import com.legal.lawconnect.services.citizen.CitizenService;
 import com.legal.lawconnect.services.citizen.ICitizenService;
 import com.legal.lawconnect.services.lawyer.ILawyerService;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,6 +27,8 @@ public class ConsultationService implements IConsultationService {
     private final ConsultationRepository consultationRepository;
     private final ILawyerService lawyerService;
     private final ICitizenService citizenService;
+    private final ModelMapper modelMapper;
+
     @Override
     public Consultation.ConsultationStatus getConsultationStatus(UUID ownerId, UUID consultationId) {
         Consultation consultation = consultationRepository.findById(consultationId)
@@ -164,5 +169,18 @@ public class ConsultationService implements IConsultationService {
             throw new UnauthorizedActionException("You are not allowed to delete the consultation!");
         }
         consultationRepository.delete(target);
+    }
+
+    @Override
+    public ConsultationDto convertToDto(Consultation consultation) {
+        ConsultationDto dto = modelMapper.map(consultation, ConsultationDto.class);
+        dto.setCitizenId(consultation.getCitizen().getId());
+        dto.setLawyerID(consultation.getLawyer().getId());
+        return dto;
+    }
+
+    @Override
+    public List<ConsultationDto> getConvertedConsultations(List<Consultation> consultations) {
+        return consultations.stream().map(this:: convertToDto).toList();
     }
 }

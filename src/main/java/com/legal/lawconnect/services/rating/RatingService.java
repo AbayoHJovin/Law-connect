@@ -39,7 +39,7 @@ public class RatingService implements IRatingService {
     @Override
     public void addRating(AddRatingRequest request, Citizen citizen, Lawyer lawyer) {
        Rating hasRated = ratingRepository.findRatingsByCitizen_IdAndLawyer_Id(request.getCitizenId(),request.getLawyerId());
-       if (hasRated== null) {
+       if (hasRated != null) {
            throw new AlreadyExistsException("The Citizen has already rated the lawyer");
        }
         ratingRepository.save(createRating(request, citizen, lawyer));

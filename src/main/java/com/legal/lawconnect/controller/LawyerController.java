@@ -1,10 +1,7 @@
 package com.legal.lawconnect.controller;
 
-import com.legal.lawconnect.dto.CitizenDto;
 import com.legal.lawconnect.dto.LawyerDto;
-import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
-import com.legal.lawconnect.model.Citizen;
 import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.requests.*;
 import com.legal.lawconnect.response.ApiResponse;
@@ -47,19 +44,18 @@ public class LawyerController {
     }
 
     @GetMapping("/find/{id}")
-    public ResponseEntity<ApiResponse> findLawyerById(@PathVariable("id") String id) {
+    public ResponseEntity<ApiResponse> findLawyerById(@PathVariable UUID id) {
         try {
-            UUID uuid = UUID.fromString(id);
-            Lawyer lawyer = lawyerService.findById((uuid));
+            Lawyer lawyer = lawyerService.findById(id);
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
             return ResponseEntity.ok(new ApiResponse("success", convertedLawyer));
-        }catch (Exception e){
-            return ResponseEntity.status(500).body(new ApiResponse("error", e.getMessage()));
+        }catch (RuntimeException e){
+            return ResponseEntity.status(404).body(new ApiResponse(e.getMessage(),null));
         }
     }
 
-    @GetMapping("/find/{email}")
-    public ResponseEntity<ApiResponse> findLawyerByEmail(@PathVariable("email") String email) {
+    @GetMapping("/find-by-email")
+    public ResponseEntity<ApiResponse> findLawyerByEmail(@RequestParam("email") String email) {
         try {
             Lawyer lawyer = lawyerService.findByEmail((email));
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
@@ -69,8 +65,8 @@ public class LawyerController {
         }
     }
 
-    @GetMapping("/find/{phone}")
-    public ResponseEntity<ApiResponse> findLawyerByPhone(@PathVariable("phone") String phone) {
+    @GetMapping("/find-by-phone")
+    public ResponseEntity<ApiResponse> findLawyerByPhone(@RequestParam("phone") String phone) {
         try {
             Lawyer lawyer = lawyerService.findByPhone(phone);
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
@@ -80,10 +76,10 @@ public class LawyerController {
         }
     }
 
-    @PutMapping("/update/{lawyerId}")
-    public ResponseEntity<ApiResponse> updateLawyer(@RequestBody UpdateLawyerRequest request, @PathVariable UUID lawyerId){
+    @PatchMapping("/update")
+    public ResponseEntity<ApiResponse> updateLawyer(@RequestBody UpdateLawyerRequest request){
         try{
-            Lawyer lawyer = lawyerService.updateLawyer(request, lawyerId);
+            Lawyer lawyer = lawyerService.updateLawyer(request);
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
             return ResponseEntity.ok(new ApiResponse("Lawyer Updated successfully", convertedLawyer));
         } catch (RuntimeException e) {
@@ -119,19 +115,19 @@ public class LawyerController {
             Lawyer lawyer = lawyerService.findLawyerByPhoneAndPassword(phoneLoginRequest);
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
             return ResponseEntity.ok(new ApiResponse("Success", convertedLawyer));
-        }catch (ResourceNotFoundException e){
+        }catch (RuntimeException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
         }
     }
 
 
     @PostMapping("/email-login")
-    public ResponseEntity<ApiResponse> EmailLogin (@RequestBody EmailLoginRequest emailLoginRequest) {
+    public ResponseEntity<ApiResponse> emailLogin(@RequestBody EmailLoginRequest emailLoginRequest) {
         try{
             Lawyer lawyer = lawyerService.findLawyerByEmailAndPassword(emailLoginRequest);
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
             return ResponseEntity.ok(new ApiResponse("Success", convertedLawyer));
-        }catch (ResourceNotFoundException e){
+        }catch (RuntimeException e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
         }
     }

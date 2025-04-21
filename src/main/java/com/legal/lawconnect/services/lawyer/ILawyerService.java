@@ -16,7 +16,7 @@ public interface ILawyerService {
     Lawyer findById(UUID id);
     Lawyer findByEmail(String email);
     Lawyer findByPhone(String phone);
-    Lawyer updateLawyer(UpdateLawyerRequest lawyer, UUID id);
+    Lawyer updateLawyer(UpdateLawyerRequest lawyer);
     void deleteLawyer(UUID id);
     void setAvailabilityForWork(UUID lawyerId, boolean availability);
     Lawyer findLawyerByEmailAndPassword(EmailLoginRequest request);

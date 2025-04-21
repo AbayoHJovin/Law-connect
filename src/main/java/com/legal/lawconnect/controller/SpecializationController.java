@@ -47,7 +47,7 @@ public class SpecializationController {
         List<Specialization> allSpecialization = specializationService.getSpecializations();
         List<SpecializationDto> convertedSpecializations = specializationService.getConvertedSpecializations(allSpecialization);
         return ResponseEntity.ok(new ApiResponse("All specializations", convertedSpecializations));
-    }catch(Exception e){
+    }catch(RuntimeException e){
         return ResponseEntity.status(500).body(new ApiResponse(e.getMessage(),null));
     }
     }

@@ -16,5 +16,6 @@ public class LawyerDto {
     private String licenseNumber;
     private int yearsOfExperience;
     private String location;
+    private boolean isAvailableForWork;
     private List<SpecializationDto> specializations;
 }

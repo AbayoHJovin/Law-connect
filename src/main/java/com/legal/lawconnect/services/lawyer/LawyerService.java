@@ -102,32 +102,36 @@ public class LawyerService implements ILawyerService {
     }
 
     @Override
-    public Lawyer updateLawyer(UpdateLawyerRequest request, UUID id) {
-        return lawyerRepository.findById(id)
-                .map(existingLawyer-> updateExistingLawyer(existingLawyer,request))
-                .map(lawyerRepository::save)
-                .orElseThrow(()-> new ResourceNotFoundException("Lawyer not found!"));
-    }
+    public Lawyer updateLawyer(UpdateLawyerRequest request) {
+        if (request == null || request.getLawyerId() == null) {
+            throw new IllegalArgumentException("Invalid lawyer update request.");
+        }
 
-    private Lawyer updateExistingLawyer(Lawyer existingLawyer, UpdateLawyerRequest request){
-       existingLawyer.setFullName(request.getFullName());
-       existingLawyer.setEmail(request.getEmail());
-       existingLawyer.setPhoneNumber(request.getPhoneNumber());
-       existingLawyer.setLanguagePreference(request.getLanguagePreference());
-       existingLawyer.setLicenseNumber(request.getLicenseNumber());
-       existingLawyer.setYearsOfExperience(request.getYearsOfExperience());
-       existingLawyer.setLocation(request.getLocation());
-       List<SpecializationRequest> specialization = request.getSpecialization();
-       List<Specialization> specializationList = new ArrayList<Specialization>();
-       specialization.forEach(s -> {
-           Specialization exists = specializationRepository.findByName(s.getSpecializationName());
-           if (exists == null) {
-           exists = specializationService.addSpecialization(s.getSpecializationName());
-           }
-           specializationList.add(exists);
-       });
-       existingLawyer.setSpecialization(specializationList);
-       return existingLawyer;
+        Lawyer existingLawyer = lawyerRepository.findById(request.getLawyerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Lawyer not found with ID: " + request.getLawyerId()));
+
+        updateExistingLawyer(existingLawyer, request);
+        return lawyerRepository.save(existingLawyer);
+    }
+    private void updateExistingLawyer(Lawyer existingLawyer, UpdateLawyerRequest request) {
+        Optional.ofNullable(request.getFullName()).ifPresent(existingLawyer::setFullName);
+        Optional.ofNullable(request.getEmail()).ifPresent(existingLawyer::setEmail);
+        Optional.ofNullable(request.getPhoneNumber()).ifPresent(existingLawyer::setPhoneNumber);
+        Optional.ofNullable(request.getLanguagePreference()).ifPresent(existingLawyer::setLanguagePreference);
+        Optional.ofNullable(request.getLicenseNumber()).ifPresent(existingLawyer::setLicenseNumber);
+        Optional.ofNullable(request.getYearsOfExperience()).ifPresent(existingLawyer::setYearsOfExperience);
+        Optional.ofNullable(request.getLocation()).ifPresent(existingLawyer::setLocation);
+
+        if (request.getSpecialization() != null && !request.getSpecialization().isEmpty()) {
+            List<Specialization> specializationList = request.getSpecialization().stream()
+                    .map(s -> {
+                        Specialization existing = specializationRepository.findByName(s.getSpecializationName());
+                        return existing != null ? existing : specializationService.addSpecialization(s.getSpecializationName());
+                    })
+                    .collect(Collectors.toList());
+
+            existingLawyer.setSpecialization(specializationList);
+        }
     }
 
     @Override
@@ -152,10 +156,10 @@ public class LawyerService implements ILawyerService {
     public Lawyer findLawyerByEmailAndPassword(EmailLoginRequest request) {
         Lawyer lawyer = lawyerRepository.findByEmail(request.getEmail());
         if(lawyer == null){
-            throw new ResourceNotFoundException("Lawyer not found");
+            throw new ResourceNotFoundException("Invalid Credentials");
         }
         if(!passwordEncoder.matches(request.getPassword(), lawyer.getPassword())){
-            throw new UnauthorizedActionException("Passwords do not match");
+            throw new UnauthorizedActionException("Invalid Credentials");
         }
         return lawyer;
     }
@@ -165,10 +169,10 @@ public class LawyerService implements ILawyerService {
 
         Lawyer lawyer = lawyerRepository.findByPhoneNumber(request.getPhoneNumber());
         if(lawyer == null){
-            throw new ResourceNotFoundException("Citizen not found");
+            throw new ResourceNotFoundException("Invalid Credentials");
         }
         if(!passwordEncoder.matches(request.getPassword(), lawyer.getPassword())){
-            throw new UnauthorizedActionException("Passwords do not match");
+            throw new UnauthorizedActionException("Invalid Credentials");
         }
         return lawyer;
     }
