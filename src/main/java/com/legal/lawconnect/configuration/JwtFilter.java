@@ -50,15 +50,23 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         // Validate and set authentication
-        if (token != null && jwtUtil.validateToken(token)) {
+        if (token != null && jwtUtil.validateToken(token) && SecurityContextHolder.getContext().getAuthentication() == null) {
             String username = jwtUtil.getUserFromToken(token);
+            System.out.println("extracted username: " + username);
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if(userDetails != null) {
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }else{
+                System.out.println("User not found with email: " + username);
+            }
+        }else{
+            System.out.println("Invalid token");
         }
 
         filterChain.doFilter(request, response);

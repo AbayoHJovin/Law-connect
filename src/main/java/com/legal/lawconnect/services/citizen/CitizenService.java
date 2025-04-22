@@ -122,8 +122,8 @@ public class CitizenService implements ICitizenService {
     }
 
     @Override
-    public void changeLanguagePreference(String languagePreference, UUID citizenId) {
-    Citizen citizen = getCitizenById(citizenId);
+    public void changeLanguagePreference(String languagePreference, String citizenEmail) {
+    Citizen citizen = getCitizenByEmail(citizenEmail);
     if(citizen == null){
       throw new ResourceNotFoundException("Citizen not found");
     }

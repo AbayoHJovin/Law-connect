@@ -68,8 +68,8 @@ public class AppConfig {
                                 new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/adm/.*$", null),
                                 new RegexRequestMatcher("^/api/v1/specializations/.*$", null)
                         ).hasRole("ADMIN")
-                        .requestMatchers("/api/v1/citizens/cit").hasRole("CITIZEN")
-                        .requestMatchers("/api/v1/lawyers/lawy").hasRole("LAWYER")
+                        .requestMatchers("/api/v1/citizens/cit/**").hasRole("CITIZEN")
+                        .requestMatchers("/api/v1/lawyers/lawy/**").hasRole("LAWYER")
                         .requestMatchers("/api/v1/consultations/lawy-cit").hasAnyRole("CITIZEN","LAWYER")
                         .anyRequest().authenticated()
                 )

@@ -16,6 +16,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
@@ -114,15 +116,22 @@ public class CitizenController {
         }
     }
 
-    @PutMapping("/cit/changeLanguage/{citizenId}")
-    public ResponseEntity<ApiResponse> changeLanguage(@RequestParam String newLanguage, @PathVariable UUID citizenId){
-        try{
-            citizenService.changeLanguagePreference(newLanguage, citizenId);
-            return ResponseEntity.ok(new ApiResponse("Language preference changed Successfully", null));
-        }catch(ResourceNotFoundException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
-        }
+    @PutMapping("/cit/changeLanguage")
+    public ResponseEntity<ApiResponse> changeLanguage(@RequestParam String newLanguage) {
+        try {
+            // Get the currently authenticated user's email
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+            // Call the service method with the email
+            citizenService.changeLanguagePreference(newLanguage, email);
 
+            return ResponseEntity.ok(new ApiResponse("Language preference changed successfully", null));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(), null));
+        }
     }
 
     @PatchMapping("/cit/update-citizen")

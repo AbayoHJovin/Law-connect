@@ -16,7 +16,7 @@ public interface ICitizenService {
     Citizen getCitizenByEmail(String email);
     void rateLawyer(AddRatingRequest request);
     void changePassword(ChangePasswordRequest request);
-    void changeLanguagePreference(String languagePreference, UUID citizenId);
+    void changeLanguagePreference(String languagePreference, String citizenEmail);
     Citizen updateCitizen(UpdateCitizenRequest citizen, UUID citizenId);
     void deleteCitizen(UUID id);
     Citizen findCitizenByPhoneNumberAndPassword(PhoneLoginRequest phoneLoginRequest);
