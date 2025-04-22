@@ -162,14 +162,14 @@ public class CitizenController {
         try{
             Citizen citizen = citizenService.findCitizenByEmailAndPassword(request);
             CitizenDto convertedCitizen = citizenService.convertCitizenToDto(citizen);
-            String accessToken = jwtUtil.generateToken(convertedCitizen.getId());
-            RefreshToken refreshToken = authService.createRefreshTokenByCitizen(citizen);
+            String accessToken = jwtUtil.generateToken(convertedCitizen.getEmail());
+            String refreshToken = authService.createRefreshTokenByCitizen(citizen);
             Cookie accessCookie = new Cookie("access_token", accessToken);
             accessCookie.setHttpOnly(true);
             accessCookie.setPath("/");
             accessCookie.setMaxAge(15 * 60); // 15 min
 
-            Cookie refreshCookie = new Cookie("refresh_token", refreshToken.getToken());
+            Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
             refreshCookie.setHttpOnly(true);
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days

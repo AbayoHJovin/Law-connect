@@ -6,6 +6,7 @@ import com.legal.lawconnect.model.RefreshToken;
 import com.legal.lawconnect.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -17,7 +18,8 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     // 🔁 Create new refresh token
-    public RefreshToken createRefreshTokenByLawyer(Lawyer lawyer) {
+    @Transactional
+    public String createRefreshTokenByLawyer(Lawyer lawyer) {
         // Delete existing token (rotate)
         refreshTokenRepository.deleteByLawyer(lawyer);
 
@@ -25,29 +27,48 @@ public class AuthService {
         token.setLawyer(lawyer);
         token.setToken(UUID.randomUUID().toString());
         token.setExpiryDate(Instant.now().plusSeconds(604800)); // 7 days
-        return refreshTokenRepository.save(token);
+        RefreshToken savedToken = refreshTokenRepository.save(token);
+        return savedToken.getToken();
     }
 
-    public RefreshToken createRefreshTokenByCitizen(Citizen citizen) {
-        refreshTokenRepository.deleteByCitizen(citizen);
+//    @Transactional
+//    public String createRefreshTokenByCitizen(Citizen citizen) {
+//        Optional<RefreshToken> existingToken = refreshTokenRepository.findByCitizen(citizen);
+//        existingToken.ifPresent(refreshTokenRepository::delete); // safer delete
+//        refreshTokenRepository.flush();
+//        RefreshToken token = new RefreshToken();
+//        token.setCitizen(citizen);
+//        token.setToken(UUID.randomUUID().toString());
+//        token.setExpiryDate(Instant.now().plusSeconds(604800)); // 7 days
+//        RefreshToken savedToken = refreshTokenRepository.save(token);
+//        return savedToken.getToken();
+//    }
 
-        RefreshToken token = new RefreshToken();
+    @Transactional
+    public String createRefreshTokenByCitizen(Citizen citizen) {
+        RefreshToken token = refreshTokenRepository.findByCitizen(citizen)
+                .orElse(new RefreshToken());
+
         token.setCitizen(citizen);
         token.setToken(UUID.randomUUID().toString());
-        token.setExpiryDate(Instant.now().plusSeconds(604800)); // 7 days
-        return refreshTokenRepository.save(token);
+        token.setExpiryDate(Instant.now().plusSeconds(7 * 24 * 60 * 60)); // 7 days
+        return refreshTokenRepository.save(token).getToken();
     }
+
+
     // 🧪 Verify and return if token is valid
+    @Transactional(readOnly = true)
     public Optional<RefreshToken> verifyRefreshToken(String tokenStr) {
         return refreshTokenRepository.findByToken(tokenStr)
                 .filter(token -> token.getExpiryDate().isAfter(Instant.now()));
     }
 
-    // ❌ For logout
+    @Transactional
     public void revokeRefreshTokenLawyer(Lawyer user) {
         refreshTokenRepository.deleteByLawyer(user);
     }
 
+    @Transactional
     public void revokeRefreshTokenCitizen(Citizen user) {
         refreshTokenRepository.deleteByCitizen(user);
     }

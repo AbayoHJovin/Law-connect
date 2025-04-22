@@ -15,17 +15,17 @@ import javax.crypto.SecretKey;
 
 @Component
 public class JwtUtil {
-    private final String secret = "mySecretKey"; // You should store this securely (not in code)
+    private final String secret = "92c9ecbb7ce30f51b15b64943ebac510e7c59cdadd326965b401f30213433377ab3c38a467d65befb544939d0e1917891abea061a90"; // You should store this securely (not in code)
     private SecretKey getSignKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
     // Generate token with username
-    public String generateToken(UUID userId) {
+    public String generateToken(String email) {
         // 15 minutes
         long expirationMs = 1000 * 60 * 15;
         return Jwts.builder()
-                .subject(String.valueOf(userId))
+                .subject(email)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSignKey() , Jwts.SIG.HS256)

@@ -24,11 +24,11 @@ public class RefreshToken {
     private String token;
 
     @OneToOne
-    @JoinColumn(name = "citizen_id", referencedColumnName = "id")
+    @JoinColumn(name = "citizen_id", unique = true, referencedColumnName = "id")
     private Citizen citizen;
 
     @OneToOne
-    @JoinColumn(name="lawyer_id", referencedColumnName = "id")
+    @JoinColumn(name="lawyer_id", unique = true, referencedColumnName = "id")
     private Lawyer lawyer;
 
     @Column(nullable = false)
