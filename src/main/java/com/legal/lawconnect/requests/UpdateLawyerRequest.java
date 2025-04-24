@@ -16,5 +16,6 @@ public class UpdateLawyerRequest {
     private String licenseNumber;
     private Integer yearsOfExperience;
     private String location;
+    private Boolean isAvailableForWork;
     private List<SpecializationRequest> specialization;
 }

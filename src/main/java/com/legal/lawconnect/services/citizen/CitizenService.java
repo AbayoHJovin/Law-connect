@@ -17,8 +17,10 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -35,6 +37,9 @@ public class CitizenService implements ICitizenService {
     public Citizen addCitizen(AddCitizenRequest citizen) {
         if (citizen.getEmail() == null && citizen.getPhoneNumber() == null) {
             throw new IllegalArgumentException("Either email or phoneNumber must be provided");
+        }
+        if(!Objects.equals(citizen.getPassword(), citizen.getConfirmPassword())){
+            throw new IllegalArgumentException("Passwords do not match");
         }
       boolean exists = citizenRepository.existsByEmailOrPhoneNumber(citizen.getEmail(), citizen.getPhoneNumber());
       if (exists) {
@@ -95,8 +100,8 @@ public class CitizenService implements ICitizenService {
     }
 
     @Override
-    public void rateLawyer(AddRatingRequest request) {
-    Citizen citizen = getCitizenById(request.getCitizenId());
+    public void rateLawyer(AddRatingRequest request, String email) {
+    Citizen citizen = getCitizenByEmail(email);
     Lawyer lawyer = lawyerService.findById(request.getLawyerId());
     if(citizen == null){
       throw new ResourceNotFoundException("Citizen not found");
@@ -104,7 +109,7 @@ public class CitizenService implements ICitizenService {
     if(lawyer == null){
       throw new ResourceNotFoundException("Lawyer not found");
     }
-     ratingService.addRating(request, citizen , lawyer);
+     ratingService.addRating(request, citizen , lawyer, citizen.getId());
     }
 
     @Override
@@ -132,18 +137,19 @@ public class CitizenService implements ICitizenService {
     }
 
     @Override
-    public Citizen updateCitizen(UpdateCitizenRequest citizen, UUID citizenId) {
-        return citizenRepository.findById(citizenId)
-                .map(existingCitizen-> updateExistingCitizen(existingCitizen,citizen))
-                .map(citizenRepository::save)
-                .orElseThrow(()-> new ResourceNotFoundException("Citizen not found"));
+    @Transactional
+    public Citizen updateCitizen(UpdateCitizenRequest request, String email) {
+        Citizen cit= citizenRepository.findByEmail(email);
+        if(cit == null){
+            throw new ResourceNotFoundException("Citizen not found");
+        }
+        Citizen updatedCitizen = updateExistingCitizen(cit,request);
+        citizenRepository.save(updatedCitizen);
+        return updatedCitizen;
     }
     private Citizen updateExistingCitizen(Citizen existingCitizen, UpdateCitizenRequest request){
         if (request.getFullName() != null)
             existingCitizen.setFullName(request.getFullName());
-
-        if (request.getEmail() != null)
-            existingCitizen.setEmail(request.getEmail());
 
         if (request.getPhoneNumber() != null)
             existingCitizen.setPhoneNumber(request.getPhoneNumber());

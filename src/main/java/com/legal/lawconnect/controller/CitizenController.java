@@ -99,7 +99,13 @@ public class CitizenController {
     @PostMapping("/cit/rate-lawyer")
     public ResponseEntity<ApiResponse> rateLawyer(@RequestBody AddRatingRequest request){
         try {
-            citizenService.rateLawyer(request);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if(authentication == null || !authentication.isAuthenticated()){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            System.out.println("The authentication is " + authentication + " and the request is " + request);
+            String email = authentication.getName();
+            citizenService.rateLawyer(request,email);
             return ResponseEntity.ok(new ApiResponse("You've rated the lawyer successfully!", null));
         }catch(ResourceNotFoundException | AlreadyExistsException e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(), null));
@@ -125,6 +131,7 @@ public class CitizenController {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
             }
             String email = authentication.getName();
+
             // Call the service method with the email
             citizenService.changeLanguagePreference(newLanguage, email);
 
@@ -137,7 +144,12 @@ public class CitizenController {
     @PatchMapping("/cit/update-citizen")
     public ResponseEntity<ApiResponse> updateCitizen(@RequestBody UpdateCitizenRequest request){
         try {
-            Citizen cit = citizenService.updateCitizen(request, request.getCitizenId());
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+            Citizen cit = citizenService.updateCitizen(request, email);
             CitizenDto convertedCitizen = citizenService.convertCitizenToDto(cit);
             return ResponseEntity.ok(new ApiResponse("Success", convertedCitizen));
         }catch(ResourceNotFoundException e){

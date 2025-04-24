@@ -12,4 +12,5 @@ public class AddCitizenRequest {
     private String languagePreference;
     private String location;
     private String password;
+    private String confirmPassword;
 }

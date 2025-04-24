@@ -31,19 +31,6 @@ public class AuthService {
         return savedToken.getToken();
     }
 
-//    @Transactional
-//    public String createRefreshTokenByCitizen(Citizen citizen) {
-//        Optional<RefreshToken> existingToken = refreshTokenRepository.findByCitizen(citizen);
-//        existingToken.ifPresent(refreshTokenRepository::delete); // safer delete
-//        refreshTokenRepository.flush();
-//        RefreshToken token = new RefreshToken();
-//        token.setCitizen(citizen);
-//        token.setToken(UUID.randomUUID().toString());
-//        token.setExpiryDate(Instant.now().plusSeconds(604800)); // 7 days
-//        RefreshToken savedToken = refreshTokenRepository.save(token);
-//        return savedToken.getToken();
-//    }
-
     @Transactional
     public String createRefreshTokenByCitizen(Citizen citizen) {
         RefreshToken token = refreshTokenRepository.findByCitizen(citizen)

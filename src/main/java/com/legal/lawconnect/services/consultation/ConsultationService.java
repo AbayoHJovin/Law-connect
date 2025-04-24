@@ -47,9 +47,13 @@ public class ConsultationService implements IConsultationService {
 
 
     @Override
-    public Consultation getConsultationById(UUID consultationId) {
-        return consultationRepository.findById(consultationId)
+    public Consultation getConsultationById(UUID consultationId,String email) {
+        Consultation consultation= consultationRepository.findById(consultationId)
                 .orElseThrow(()-> new ResourceNotFoundException("Consultation with id " + consultationId + " not found"));
+        if(!consultation.getLawyer().getEmail().equals(email) && !consultation.getCitizen().getEmail().equals(email)) {
+            throw new UnauthorizedActionException("You are not authorized to access this consultation" + email);
+        }
+        return consultation;
     }
 
     @Override
@@ -67,10 +71,10 @@ public class ConsultationService implements IConsultationService {
     }
 
     @Override
-    public List<Consultation> getConsultationsForCitizen(UUID citizenId) {
-        Citizen owner = citizenService.getCitizenById(citizenId);
+    public List<Consultation> getConsultationsForCitizen(String citizenEmail) {
+        Citizen owner = citizenService.getCitizenByEmail(citizenEmail);
         if(owner == null) {
-            throw new ResourceNotFoundException("Citizen with id " + citizenId + " not found");
+            throw new ResourceNotFoundException("Citizen with email " + citizenEmail + " not found");
         }
         return owner.getConsultations();
     }
@@ -115,22 +119,27 @@ public class ConsultationService implements IConsultationService {
     }
 
     @Override
-    public Consultation createConsultation(CreateConsultationRequest consultation) {
+    public Consultation createConsultation(CreateConsultationRequest consultation,String citizenEmail) {
         Lawyer ownerLawyer = lawyerService.findById(consultation.getLawyerId());
-        Citizen ownerCitizen = citizenService.getCitizenById(consultation.getCitizenId());
+        Citizen ownerCitizen = citizenService.getCitizenByEmail(citizenEmail);
         if (ownerLawyer == null || ownerCitizen == null) {
             throw new ResourceNotFoundException("Missing lawyer or citizen");
+        }
+        if(!ownerLawyer.isAvailableForWork()){
+            throw new UnauthorizedActionException("Lawyer Not available for work!");
         }
        return consultationRepository.save(createNewConsultation(consultation, ownerLawyer, ownerCitizen));
     }
     private Consultation createNewConsultation(CreateConsultationRequest consultation, Lawyer ownerLawyer, Citizen ownerCitizen) {
-        return new Consultation(
-                ownerCitizen,
-                ownerLawyer,
-                consultation.getSubject(),
-                consultation.getDescription(),
-                consultation.getStatus()
-        );
+        Consultation consultation1 = new Consultation();
+        consultation1.setCitizen(ownerCitizen);
+        consultation1.setLawyer(ownerLawyer);
+        consultation1.setSubject(consultation.getSubject());
+        if(!consultation.getDescription().isEmpty()){
+            consultation1.setDescription(consultation.getDescription());
+        }
+        consultation1.setStatus(Consultation.ConsultationStatus.PENDING);
+        return consultation1;
     }
     @Override
     public Consultation updateConsultation(UUID consultationId, UpdateConsultationRequest updatedConsultation) {
@@ -146,8 +155,8 @@ public class ConsultationService implements IConsultationService {
        return existingConsultation;
     }
     @Override
-    public Consultation changeStatus(UUID lawyerId, UUID consultationId, Consultation.ConsultationStatus newStatus) {
-        Consultation target = getConsultationById(consultationId);
+    public Consultation changeStatus(UUID lawyerId, UUID consultationId, Consultation.ConsultationStatus newStatus,String email) {
+        Consultation target = getConsultationById(consultationId,email);
         if(target == null) {
             throw new ResourceNotFoundException("Consultation with id " + consultationId + " not found");
         }
@@ -160,8 +169,8 @@ public class ConsultationService implements IConsultationService {
     }
 
     @Override
-    public void deleteConsultation(UUID consultationId, UUID lawyerId) {
-        Consultation target = getConsultationById(consultationId);
+    public void deleteConsultation(UUID consultationId, UUID lawyerId,String email) {
+        Consultation target = getConsultationById(consultationId,email);
         if(target == null) {
             throw new ResourceNotFoundException("Consultation with id " + consultationId + " not found");
         }

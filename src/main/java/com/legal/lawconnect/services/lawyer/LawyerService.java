@@ -13,6 +13,7 @@ import com.legal.lawconnect.model.Specialization;
 import com.legal.lawconnect.repository.LawyerRepository;
 import com.legal.lawconnect.repository.SpecializationRepository;
 import com.legal.lawconnect.requests.*;
+import com.legal.lawconnect.services.rating.RatingService;
 import com.legal.lawconnect.services.specialization.SpecializationService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -33,6 +34,7 @@ public class LawyerService implements ILawyerService {
     private final PasswordEncoder passwordEncoder;
     private final SpecializationService specializationService;
     private final ModelMapper modelMapper;
+    private final RatingService ratingService;
 
     @Override
     public Lawyer save(AddLawyerRequest lawyer) {
@@ -129,6 +131,9 @@ public class LawyerService implements ILawyerService {
         Optional.ofNullable(request.getLicenseNumber()).ifPresent(existingLawyer::setLicenseNumber);
         Optional.ofNullable(request.getYearsOfExperience()).ifPresent(existingLawyer::setYearsOfExperience);
         Optional.ofNullable(request.getLocation()).ifPresent(existingLawyer::setLocation);
+        Optional.ofNullable(request.getIsAvailableForWork()).ifPresent(existingLawyer::setAvailableForWork);
+
+
 
         if (request.getSpecialization() != null && !request.getSpecialization().isEmpty()) {
             List<Specialization> validSpecializations = new ArrayList<>();
@@ -235,6 +240,8 @@ public class LawyerService implements ILawyerService {
                 .map(image -> modelMapper.map(image, SpecializationDto.class))
                 .toList();
         lawyerDto.setSpecializations(specializationDtos);
+        double averageRating = ratingService.calculateAverageRating(lawyer.getId());
+        lawyerDto.setAverageRating(averageRating);
         return lawyerDto;
     }
 

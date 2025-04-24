@@ -14,10 +14,10 @@ public interface ICitizenService {
     List<Citizen> getCitizensByLocation(String location);
     Citizen getCitizenByPhoneNumber(String phoneNumber);
     Citizen getCitizenByEmail(String email);
-    void rateLawyer(AddRatingRequest request);
+    void rateLawyer(AddRatingRequest request,String email);
     void changePassword(ChangePasswordRequest request);
     void changeLanguagePreference(String languagePreference, String citizenEmail);
-    Citizen updateCitizen(UpdateCitizenRequest citizen, UUID citizenId);
+    Citizen updateCitizen(UpdateCitizenRequest citizen, String email);
     void deleteCitizen(UUID id);
     Citizen findCitizenByPhoneNumberAndPassword(PhoneLoginRequest phoneLoginRequest);
     Citizen findCitizenByEmailAndPassword(EmailLoginRequest emailLoginRequest);

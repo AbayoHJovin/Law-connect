@@ -18,4 +18,5 @@ public class LawyerDto {
     private String location;
     private boolean isAvailableForWork;
     private List<SpecializationDto> specializations;
+    double averageRating;
 }

@@ -1,5 +1,6 @@
 package com.legal.lawconnect.services.rating;
 
+import com.legal.lawconnect.dto.RatingDto;
 import com.legal.lawconnect.exceptions.AlreadyExistsException;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.exceptions.UnauthorizedActionException;
@@ -13,18 +14,24 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RatingService implements IRatingService {
     private final RatingRepository ratingRepository;
     @Override
-    public List<Rating> getRatingsOfLawyer(UUID lawyerId) {
-        List<Rating> rates = ratingRepository.findRatingsByLawyer_Id(lawyerId);
-        if (rates.isEmpty()) {
-            throw new ResourceNotFoundException("The lawyer hasn't been rated yet!");
-        }
-        return rates;
+    public List<RatingDto> getRatingsOfLawyer(UUID lawyerId) {
+    List<Rating> ratings = ratingRepository.findRatingsByLawyer_Id(lawyerId);
+
+    return ratings.stream().map(rating -> {
+            RatingDto dto = new RatingDto();
+            dto.setRatingId(rating.getId());
+            dto.setCitizenName(rating.getCitizen().getFullName());
+            dto.setRatingScore(rating.getRating());
+            dto.setReviewText(rating.getReviewText());
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -37,8 +44,8 @@ public class RatingService implements IRatingService {
     }
 
     @Override
-    public void addRating(AddRatingRequest request, Citizen citizen, Lawyer lawyer) {
-       Rating hasRated = ratingRepository.findRatingsByCitizen_IdAndLawyer_Id(request.getCitizenId(),request.getLawyerId());
+    public void addRating(AddRatingRequest request, Citizen citizen, Lawyer lawyer,UUID citizenId) {
+       Rating hasRated = ratingRepository.findRatingsByCitizen_IdAndLawyer_Id(citizenId,request.getLawyerId());
        if (hasRated != null) {
            throw new AlreadyExistsException("The Citizen has already rated the lawyer");
        }
@@ -63,5 +70,19 @@ public class RatingService implements IRatingService {
 
         ratingRepository.delete(rating);
     }
+
+    @Override
+    public double calculateAverageRating(UUID lawyerId) {
+        List<Rating> ratings = ratingRepository.findRatingsByLawyer_Id(lawyerId);
+        if (ratings.isEmpty()) {
+            return 0;
+        }
+
+        return ratings.stream()
+                .mapToInt(Rating::getRating)
+                .average()
+                .orElse(0);
+    }
+
 
 }

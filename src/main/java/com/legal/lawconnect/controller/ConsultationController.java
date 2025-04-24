@@ -9,6 +9,8 @@ import com.legal.lawconnect.services.consultation.IConsultationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +25,12 @@ public class ConsultationController {
     @PostMapping("/add")
     public ResponseEntity<ApiResponse> addConsultation(@RequestBody CreateConsultationRequest request) {
         try{
-            Consultation consultation = consultationService.createConsultation(request);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if(authentication == null||!authentication.isAuthenticated() ){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+            Consultation consultation = consultationService.createConsultation(request,email);
             ConsultationDto consultationDto = consultationService.convertToDto(consultation);
             return ResponseEntity.ok(new ApiResponse("success", consultationDto));
         }catch(ResourceNotFoundException e){
@@ -45,7 +52,12 @@ public class ConsultationController {
     @GetMapping("/get-by-id/{consultationId}")
     public ResponseEntity<ApiResponse> getConsultationById(@PathVariable UUID consultationId) {
         try {
-            Consultation consultation = consultationService.getConsultationById(consultationId);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if(authentication == null||!authentication.isAuthenticated() ){
+                throw new ResourceNotFoundException("You are not logged in");
+            }
+            String email = authentication.getName();
+            Consultation consultation = consultationService.getConsultationById(consultationId,email);
             ConsultationDto convertedConsultation = consultationService.convertToDto(consultation);
             return ResponseEntity.ok(new ApiResponse("Success", convertedConsultation));
         }catch(ResourceNotFoundException e){
@@ -66,10 +78,15 @@ public class ConsultationController {
         }
     }
 
-    @GetMapping("/get-by-citizen/{citizenId}")
-    public ResponseEntity<ApiResponse> getConsultationsForCitizen(@PathVariable UUID citizenId) {
+    @GetMapping("/get-by-citizen")
+    public ResponseEntity<ApiResponse> getConsultationsForCitizen() {
         try{
-            List<Consultation> consultations = consultationService.getConsultationsForCitizen(citizenId);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+            List<Consultation> consultations = consultationService.getConsultationsForCitizen(email);
             List<ConsultationDto> convertedConsultations = consultationService.getConvertedConsultations(consultations);
             return ResponseEntity.ok(new ApiResponse("Success", convertedConsultations));
         }catch(RuntimeException e){

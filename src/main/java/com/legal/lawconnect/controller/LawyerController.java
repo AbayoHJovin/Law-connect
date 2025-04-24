@@ -1,11 +1,13 @@
 package com.legal.lawconnect.controller;
 
 import com.legal.lawconnect.dto.LawyerDto;
+import com.legal.lawconnect.dto.RatingDto;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.requests.*;
 import com.legal.lawconnect.response.ApiResponse;
 import com.legal.lawconnect.services.lawyer.ILawyerService;
+import com.legal.lawconnect.services.rating.RatingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ import java.util.UUID;
 @RequestMapping("${api.prefix}/lawyers")
 public class LawyerController {
     private final ILawyerService lawyerService;
+    private final RatingService ratingService;
 
     @PostMapping("/add")
     public ResponseEntity<ApiResponse> addLawyer(@RequestBody AddLawyerRequest lawyer) {
@@ -43,7 +46,7 @@ public class LawyerController {
         }
     }
 
-    @GetMapping("/find-by-id/{id}")
+    @GetMapping("/get-by-id/{id}")
     public ResponseEntity<ApiResponse> findLawyerById(@PathVariable UUID id) {
         try {
             Lawyer lawyer = lawyerService.findById(id);
@@ -155,6 +158,17 @@ public class LawyerController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),null));
         }
     }
+
+    @GetMapping("/get-all-rating/{lawyerId}")
+    public ResponseEntity<ApiResponse> getAllRating(@PathVariable UUID lawyerId){
+    try{
+        List<RatingDto> ratingDtos = ratingService.getRatingsOfLawyer(lawyerId);
+        return ResponseEntity.ok(new ApiResponse("Success", ratingDtos));
+    }catch (RuntimeException e){
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
+    }
+    }
+
 
 
     @GetMapping("/find-rating-equals-to/{ratingValue}")

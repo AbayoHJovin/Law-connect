@@ -12,21 +12,21 @@ public interface IConsultationService {
 
     // Status and Retrieval
     Consultation.ConsultationStatus getConsultationStatus(UUID lawyerId, UUID consultationId);
-    Consultation getConsultationById(UUID consultationId);
+    Consultation getConsultationById(UUID consultationId,String email);
     List<Consultation> getAllConsultations();
     List<Consultation> getConsultationsForLawyer(UUID lawyerId);
-    List<Consultation> getConsultationsForCitizen(UUID citizenId);
+    List<Consultation> getConsultationsForCitizen(String citizenEmail);
     List<Consultation> getConsultationsBetweenLawyerAndCitizen(UUID lawyerId, UUID citizenId);
     List<Consultation> getConsultationsByStatus(Consultation.ConsultationStatus status);
     List<Consultation> getConsultationsByStatusForLawyer(Consultation.ConsultationStatus status, UUID lawyerId);
 
     // Creation and Update
-    Consultation createConsultation(CreateConsultationRequest consultation);
+    Consultation createConsultation(CreateConsultationRequest consultation,String email);
     Consultation updateConsultation(UUID consultationId, UpdateConsultationRequest updatedConsultation);
-    Consultation changeStatus(UUID lawyerId,UUID consultationId, Consultation.ConsultationStatus newStatus);
+    Consultation changeStatus(UUID lawyerId,UUID consultationId, Consultation.ConsultationStatus newStatus,String email);
 
     // Deletion
-    void deleteConsultation(UUID consultationId, UUID lawyerId);
+    void deleteConsultation(UUID consultationId, UUID lawyerId,String email);
 
     ConsultationDto convertToDto(Consultation consultation);
     List<ConsultationDto> getConvertedConsultations(List<Consultation> consultations);
