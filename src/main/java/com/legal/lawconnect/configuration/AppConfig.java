@@ -68,6 +68,8 @@ public class AppConfig {
                                 new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/login-by-(phone|email)(/.*)?$", null),
                                 new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/(add|all|get-by-id|find-by-phone|find-by-email)(/.*)?$", null)
                         ).permitAll()
+                        .requestMatchers("/api/v1/mail/**").permitAll()
+                        .requestMatchers("/api/v1/password/**").permitAll()
                         .requestMatchers("/api/v1/lawyers/get-all-rating").authenticated()
                         .requestMatchers("/api/v1/lawyers/find-lawyer-phone-by-lawyerId/**").permitAll()
                         .requestMatchers("/api/v1/citizens/add").permitAll()

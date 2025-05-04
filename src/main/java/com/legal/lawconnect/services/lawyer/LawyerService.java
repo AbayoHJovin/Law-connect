@@ -10,14 +10,17 @@ import com.legal.lawconnect.exceptions.UnauthorizedActionException;
 import com.legal.lawconnect.model.Citizen;
 import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.model.Specialization;
+import com.legal.lawconnect.repository.CitizenRepository;
 import com.legal.lawconnect.repository.LawyerRepository;
 import com.legal.lawconnect.repository.SpecializationRepository;
 import com.legal.lawconnect.requests.*;
+import com.legal.lawconnect.services.mail.IMailService;
 import com.legal.lawconnect.services.rating.RatingService;
 import com.legal.lawconnect.services.specialization.SpecializationService;
 import com.legal.lawconnect.validation.ValidateLawyerFields;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,19 +41,27 @@ public class LawyerService implements ILawyerService {
     private final ModelMapper modelMapper;
     private final RatingService ratingService;
     private final ValidateLawyerFields validateLawyerFields;
+    private final IMailService mailService;
+    private final CitizenRepository citizenRepository;
 
     @Override
     public Lawyer save(AddLawyerRequest lawyer) {
-        // Validate required fields
         validateLawyerFields.validateLawyerRequestFields(lawyer);
 
         boolean exists = lawyerRepository.existsByLicenseNumberOrEmailIgnoreCase(
                 lawyer.getLicenseNumber(),
                 lawyer.getEmail()
         );
+        if(citizenRepository.existsByEmailOrPhoneNumber(lawyer.getEmail(), lawyer.getPhoneNumber())){
+            throw new AlreadyExistsException("Email or phone number is already in use!");
+        }
 
         if (exists) {
             throw new AlreadyExistsException("Lawyer already exists!");
+        }
+
+        if(!mailService.isEmailVerified(lawyer.getEmail())){
+            throw new UnauthorizedActionException("First verify your email!");
         }
 
         if (!lawyer.getPassword().equals(lawyer.getConfirmPassword())) {

@@ -1,6 +1,7 @@
 package com.legal.lawconnect.services.citizen;
 
 import com.legal.lawconnect.enums.UserRoles;
+import com.legal.lawconnect.repository.LawyerRepository;
 import com.legal.lawconnect.requests.*;
 import org.modelmapper.ModelMapper;
 import com.legal.lawconnect.dto.CitizenDto;
@@ -32,6 +33,7 @@ public class CitizenService implements ICitizenService {
   private final ILawyerService lawyerService;
   private final IRatingService ratingService;
   private final ModelMapper modelMapper;
+    private final LawyerRepository lawyerRepository;
 
     @Override
     public Citizen addCitizen(AddCitizenRequest citizen) {
@@ -42,6 +44,9 @@ public class CitizenService implements ICitizenService {
             throw new IllegalArgumentException("Passwords do not match");
         }
       boolean exists = citizenRepository.existsByEmailOrPhoneNumber(citizen.getEmail(), citizen.getPhoneNumber());
+        if(lawyerRepository.findByEmail(citizen.getEmail()) != null || lawyerRepository.findByPhoneNumber(citizen.getPhoneNumber()) != null) {
+            throw new AlreadyExistsException("Email or phone number is already in use");
+        }
       if (exists) {
         throw new AlreadyExistsException("Citizen already exists");
       }
