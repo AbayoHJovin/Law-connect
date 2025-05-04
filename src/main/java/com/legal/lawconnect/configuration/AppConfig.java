@@ -65,17 +65,18 @@ public class AppConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/login-by-(phone|email)$", null),
+                                new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/login-by-(phone|email)(/.*)?$", null),
                                 new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/(add|all|get-by-id|find-by-phone|find-by-email)(/.*)?$", null)
                         ).permitAll()
-                        .requestMatchers("/api/v1/lawyers/get-all-rating/**").permitAll()
+                        .requestMatchers("/api/v1/lawyers/get-all-rating").authenticated()
+                        .requestMatchers("/api/v1/lawyers/find-lawyer-phone-by-lawyerId/**").permitAll()
                         .requestMatchers("/api/v1/citizens/add").permitAll()
                         .requestMatchers("/api/v1/citizens/cit-adm/**").hasAnyRole("ADMIN", "CITIZEN")
                         .requestMatchers("/api/v1/lawyers/lawy-adm/**").hasAnyRole("ADMIN", "LAWYER")
                         .requestMatchers(
                                 new RegexRequestMatcher("^/api/v1/(citizens|lawyers)/adm/.*$", null),
                                 new RegexRequestMatcher("^/api/v1/specializations/.*$", null)
-                        ).hasRole("ADMIN")
+                        ).permitAll()
                         .requestMatchers("/api/v1/citizens/cit/**").hasRole("CITIZEN")
                         .requestMatchers("/api/v1/lawyers/lawy/**").hasRole("LAWYER")
                         .requestMatchers("/api/v1/consultations/lawy-cit/**").hasAnyRole("CITIZEN","LAWYER")
@@ -100,7 +101,7 @@ public class AppConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of("http://localhost:8080/")); // 🟢 Your frontend URL
+        configuration.setAllowedOrigins(List.of("http://localhost:8080","http://localhost:3000","http://localhost:8081")); // 🟢 Your frontend URL
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true); // ✅ Important for cookies

@@ -13,4 +13,6 @@ public interface RatingRepository extends JpaRepository<Rating, UUID> {
     List<Rating> findRatingsByCitizen_Id(UUID citizenId);
 
     Rating findRatingsByCitizen_IdAndLawyer_Id(UUID citizenId, UUID lawyerId);
+
+    List<Rating> findRatingsByLawyer_Email(String lawyerEmail);
 }

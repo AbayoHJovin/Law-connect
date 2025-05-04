@@ -14,7 +14,7 @@ public interface IConsultationService {
     Consultation.ConsultationStatus getConsultationStatus(UUID lawyerId, UUID consultationId);
     Consultation getConsultationById(UUID consultationId,String email);
     List<Consultation> getAllConsultations();
-    List<Consultation> getConsultationsForLawyer(UUID lawyerId);
+    List<Consultation> getConsultationsForLawyer(String lawyerEmail);
     List<Consultation> getConsultationsForCitizen(String citizenEmail);
     List<Consultation> getConsultationsBetweenLawyerAndCitizen(UUID lawyerId, UUID citizenId);
     List<Consultation> getConsultationsByStatus(Consultation.ConsultationStatus status);
@@ -26,7 +26,7 @@ public interface IConsultationService {
     Consultation changeStatus(UUID lawyerId,UUID consultationId, Consultation.ConsultationStatus newStatus,String email);
 
     // Deletion
-    void deleteConsultation(UUID consultationId, UUID lawyerId,String email);
+    void deleteConsultation(UUID consultationId,String email);
 
     ConsultationDto convertToDto(Consultation consultation);
     List<ConsultationDto> getConvertedConsultations(List<Consultation> consultations);

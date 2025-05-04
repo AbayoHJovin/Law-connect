@@ -63,7 +63,11 @@ public class CitizenService implements ICitizenService {
     }
     @Override
     public List<Citizen> getAllCitizens() {
-        return citizenRepository.findAll();
+        List<Citizen> citizens = citizenRepository.findAll();
+        if(citizens.isEmpty()){
+            throw new ResourceNotFoundException("No Citizens found");
+        }
+        return citizens;
     }
 
     @Override

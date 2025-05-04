@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -19,10 +20,21 @@ import java.util.UUID;
 public class SpecializationController {
     private final ISpecializationService specializationService;
 
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse> getAllSpecializations() {
+        try{
+            List<Specialization> allSpecialization = specializationService.getSpecializations();
+            List<SpecializationDto> convertedSpecializations = specializationService.getConvertedSpecializations(allSpecialization);
+            return ResponseEntity.ok(new ApiResponse("All specializations", convertedSpecializations));
+        }catch(RuntimeException e){
+            return ResponseEntity.status(500).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
     @PostMapping("/addSpecialization")
-    public ResponseEntity<ApiResponse> addSpecialization(@RequestBody String specializationName) {
+    public ResponseEntity<ApiResponse> addSpecialization(@RequestBody Map<String, String> body) {
     try{
-    Specialization sp = specializationService.addSpecialization(specializationName);
+        String specializationName = body.get("specializationName");
+        Specialization sp = specializationService.addSpecialization(specializationName);
     SpecializationDto convertedSp = specializationService.convertSpecializationToDto(sp);
     return ResponseEntity.ok(new ApiResponse("Specialization added!", convertedSp));
     }catch (AlreadyExistsException e){
@@ -41,14 +53,4 @@ public class SpecializationController {
         }
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<ApiResponse> getAllSpecializations() {
-    try{
-        List<Specialization> allSpecialization = specializationService.getSpecializations();
-        List<SpecializationDto> convertedSpecializations = specializationService.getConvertedSpecializations(allSpecialization);
-        return ResponseEntity.ok(new ApiResponse("All specializations", convertedSpecializations));
-    }catch(RuntimeException e){
-        return ResponseEntity.status(500).body(new ApiResponse(e.getMessage(),null));
-    }
-    }
 }

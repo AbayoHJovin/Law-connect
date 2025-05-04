@@ -39,6 +39,21 @@ public class ConsultationController {
             return ResponseEntity.status(500).body(new ApiResponse(e.getMessage(),null));
         }
     }
+
+    @DeleteMapping("/delete/{consultationId}")
+    public ResponseEntity<ApiResponse> deleteConsultation(@PathVariable UUID consultationId) {
+        try{
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if(authentication == null||!authentication.isAuthenticated() ){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+            consultationService.deleteConsultation(consultationId,email);
+            return ResponseEntity.ok(new ApiResponse("Consultation Deleted Successfully", null));
+        }catch (RuntimeException e){
+            return ResponseEntity.status(500).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
     @GetMapping("/get-status")
     public ResponseEntity<ApiResponse> getConsultationStatus(@RequestParam UUID ownerId, @RequestParam UUID consultationId) {
         try {
@@ -67,10 +82,16 @@ public class ConsultationController {
         }
     }
 
-    @GetMapping("/get-by-lawyer/{lawyerId}")
-    public ResponseEntity<ApiResponse> getConsultationsForLawyer(@PathVariable UUID lawyerId) {
+    @GetMapping("/get-by-lawyer")
+    public ResponseEntity<ApiResponse> getConsultationsForLawyer() {
         try{
-            List<Consultation> consultations = consultationService.getConsultationsForLawyer(lawyerId);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+
+            List<Consultation> consultations = consultationService.getConsultationsForLawyer(email);
             List<ConsultationDto> convertedConsultations = consultationService.getConvertedConsultations(consultations);
             return ResponseEntity.ok(new ApiResponse("Success", convertedConsultations));
         }catch(RuntimeException e){

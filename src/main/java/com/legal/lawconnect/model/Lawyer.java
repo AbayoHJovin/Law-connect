@@ -17,7 +17,6 @@ import java.util.UUID;
 public class Lawyer extends User {
 
     private String licenseNumber;
-    private String bio;
     private int yearsOfExperience;
     private boolean isAvailableForWork;
     @OneToMany(mappedBy = "lawyer", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -39,12 +38,29 @@ public class Lawyer extends User {
     private Long updatedAt;
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     private RefreshToken refreshToken;
+    @Lob
+    @Basic(fetch = FetchType.LAZY)  // Lazy loading for better performance
+    @Column(name="lawyer_bio", columnDefinition = "TEXT")
+    private String lawyerBio;
 
-    public Lawyer(String fullName, String password, String email, String phoneNumber, String languagePreference, String licenseNumber, int yearsOfExperience, String location, List<Specialization> specialization, UserRoles role) {
+    public Lawyer(String fullName, String password, String email, String phoneNumber, String languagePreference, String licenseNumber, int yearsOfExperience, String location, List<Specialization> specialization, UserRoles role,String bio) {
         super(fullName,email,phoneNumber, languagePreference,password,location,role);
         this.licenseNumber = licenseNumber;
         this.yearsOfExperience = yearsOfExperience;
         this.specialization = specialization;
+        this.lawyerBio = bio;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        long now = System.currentTimeMillis();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = System.currentTimeMillis();
     }
 
 }

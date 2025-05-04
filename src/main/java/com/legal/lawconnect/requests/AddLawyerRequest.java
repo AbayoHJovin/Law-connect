@@ -3,6 +3,7 @@ package com.legal.lawconnect.requests;
 import com.legal.lawconnect.model.Specialization;
 import lombok.Data;
 
+import java.awt.*;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,5 +17,7 @@ public class AddLawyerRequest {
     private int yearsOfExperience;
     private String location;
     private String password;
+    private String confirmPassword;
     private List<SpecializationRequest> specialization;
+    private String lawyerBio;
 }

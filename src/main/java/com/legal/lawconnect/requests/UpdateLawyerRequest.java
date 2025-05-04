@@ -8,14 +8,11 @@ import java.util.UUID;
 
 @Data
 public class UpdateLawyerRequest {
-    private UUID lawyerId;
     private String fullName;
-    private String email;
     private String phoneNumber;
     private String languagePreference;
     private String licenseNumber;
     private Integer yearsOfExperience;
     private String location;
-    private Boolean isAvailableForWork;
     private List<SpecializationRequest> specialization;
 }

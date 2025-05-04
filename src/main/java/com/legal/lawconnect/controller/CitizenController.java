@@ -45,7 +45,9 @@ public class CitizenController {
     public ResponseEntity<ApiResponse> getAllCitizens(){
         try{
             List<Citizen> citizens = citizenService.getAllCitizens();
+            System.out.println("The real citizens:" + citizens);
             List<CitizenDto> convertedCitizens = citizenService.getConvertedCitizens(citizens);
+            System.out.println("The converted citizens:" + convertedCitizens);
             return ResponseEntity.ok(new ApiResponse("Success", convertedCitizens));
         }catch(Exception e){
             return ResponseEntity.ok(new ApiResponse(e.getMessage(),null));

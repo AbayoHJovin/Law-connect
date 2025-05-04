@@ -16,7 +16,7 @@ public interface ILawyerService {
     Lawyer findById(UUID id);
     Lawyer findByEmail(String email);
     Lawyer findByPhone(String phone);
-    Lawyer updateLawyer(UpdateLawyerRequest lawyer);
+    Lawyer updateLawyer(UpdateLawyerRequest lawyer,String email);
     void deleteLawyer(UUID id);
     void setAvailabilityForWork(UUID lawyerId, boolean availability);
     Lawyer findLawyerByEmailAndPassword(EmailLoginRequest request);
@@ -28,5 +28,6 @@ public interface ILawyerService {
     void changePassword(ChangePasswordRequest request);
     LawyerDto convertLawyerToDto(Lawyer lawyer);
     List<LawyerDto> getConvertedLawyers(List<Lawyer> citizens);
+    String getLawyerPhoneNumber(UUID lawyerId);
 
 }

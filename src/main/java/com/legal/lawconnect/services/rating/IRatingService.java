@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface IRatingService {
-    List<RatingDto> getRatingsOfLawyer(UUID lawyerId);
+    List<RatingDto> getRatingsOfLawyer(String email);
     List<Rating> getRatingsByCitizen(UUID citizenId);
     void addRating(AddRatingRequest request, Citizen citizen, Lawyer lawyer,UUID citizenId);
     void removeRating(UUID ratingId, UUID citizenId);

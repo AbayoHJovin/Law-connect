@@ -6,14 +6,22 @@ import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.requests.*;
 import com.legal.lawconnect.response.ApiResponse;
+import com.legal.lawconnect.services.auth.AuthService;
 import com.legal.lawconnect.services.lawyer.ILawyerService;
 import com.legal.lawconnect.services.rating.RatingService;
+import com.legal.lawconnect.util.JwtUtil;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -22,6 +30,8 @@ import java.util.UUID;
 public class LawyerController {
     private final ILawyerService lawyerService;
     private final RatingService ratingService;
+    private final JwtUtil jwtUtil;
+    private final AuthService authService;
 
     @PostMapping("/add")
     public ResponseEntity<ApiResponse> addLawyer(@RequestBody AddLawyerRequest lawyer) {
@@ -79,10 +89,25 @@ public class LawyerController {
         }
     }
 
+    @GetMapping("/find-lawyer-phone-by-lawyerId/{lawyerId}")
+    public ResponseEntity<ApiResponse> findLawyerPhone(@PathVariable UUID lawyerId) {
+        try {
+            String lawyerPhoneNumber = lawyerService.getLawyerPhoneNumber(lawyerId);
+            return ResponseEntity.ok(new ApiResponse("success", lawyerPhoneNumber));
+        }catch (RuntimeException e){
+            return ResponseEntity.status(500).body(new ApiResponse("error", e.getMessage()));
+        }
+    }
+
     @PatchMapping("/lawy/update")
     public ResponseEntity<ApiResponse> updateLawyer(@RequestBody UpdateLawyerRequest request){
         try{
-            Lawyer lawyer = lawyerService.updateLawyer(request);
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if(authentication == null || !authentication.isAuthenticated()){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+            Lawyer lawyer = lawyerService.updateLawyer(request,email);
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
             return ResponseEntity.ok(new ApiResponse("Lawyer Updated successfully", convertedLawyer));
         } catch (RuntimeException e) {
@@ -125,13 +150,31 @@ public class LawyerController {
 
 
     @PostMapping("/login-by-email")
-    public ResponseEntity<ApiResponse> emailLogin(@RequestBody EmailLoginRequest emailLoginRequest) {
+    public ResponseEntity<?> emailLogin(@RequestBody EmailLoginRequest emailLoginRequest, HttpServletResponse response) {
         try{
             Lawyer lawyer = lawyerService.findLawyerByEmailAndPassword(emailLoginRequest);
             LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
-            return ResponseEntity.ok(new ApiResponse("Success", convertedLawyer));
+            String accessToken = jwtUtil.generateToken(convertedLawyer.getEmail());
+            String refreshToken = authService.createRefreshTokenByLawyer(lawyer);
+            Cookie accessCookie = new Cookie("access_token",accessToken);
+            accessCookie.setHttpOnly(true);
+            accessCookie.setPath("/");
+            accessCookie.setMaxAge(15 * 60);
+
+            Cookie refreshCookie = new Cookie("refresh_token",refreshToken);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
+
+            response.addCookie(accessCookie);
+            response.addCookie(refreshCookie);
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", accessToken,
+                    "refreshToken", refreshToken,
+                    "citizen", convertedLawyer
+            ));
         }catch (RuntimeException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(e.getMessage(),null));
         }
     }
 
@@ -159,10 +202,15 @@ public class LawyerController {
         }
     }
 
-    @GetMapping("/get-all-rating/{lawyerId}")
-    public ResponseEntity<ApiResponse> getAllRating(@PathVariable UUID lawyerId){
+    @GetMapping("/get-all-rating")
+    public ResponseEntity<ApiResponse> getAllRating(){
     try{
-        List<RatingDto> ratingDtos = ratingService.getRatingsOfLawyer(lawyerId);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if(authentication == null || !authentication.isAuthenticated()){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+        }
+        String email = authentication.getName();
+        List<RatingDto> ratingDtos = ratingService.getRatingsOfLawyer(email);
         return ResponseEntity.ok(new ApiResponse("Success", ratingDtos));
     }catch (RuntimeException e){
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
@@ -201,6 +249,22 @@ public class LawyerController {
             return ResponseEntity.ok(new ApiResponse("Password changed Successfully", null));
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
+
+    @GetMapping("/lawy/getCurrent")
+    public ResponseEntity<ApiResponse> getCurrentLawyer(){
+        try{
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if(authentication == null || !authentication.isAuthenticated()){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+            Lawyer lawyer = lawyerService.findByEmail(email);
+            LawyerDto convertedLawyer = lawyerService.convertLawyerToDto(lawyer);
+            return ResponseEntity.ok(new ApiResponse("Success", convertedLawyer));
+        }catch(Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(),null));
         }
     }
 }

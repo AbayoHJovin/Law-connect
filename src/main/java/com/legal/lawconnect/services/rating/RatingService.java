@@ -12,7 +12,9 @@ import com.legal.lawconnect.requests.AddRatingRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -21,10 +23,16 @@ import java.util.stream.Collectors;
 public class RatingService implements IRatingService {
     private final RatingRepository ratingRepository;
     @Override
-    public List<RatingDto> getRatingsOfLawyer(UUID lawyerId) {
-    List<Rating> ratings = ratingRepository.findRatingsByLawyer_Id(lawyerId);
+    public List<RatingDto> getRatingsOfLawyer(String email) {
+    List<Rating> allRatings = ratingRepository.findAll();
+    List<Rating> lawyerRatings = new ArrayList<>();
+    allRatings.forEach(rating -> {
+        if(Objects.equals(rating.getLawyer().getEmail(), email)){
+            lawyerRatings.add(rating);
+        }
+    });
 
-    return ratings.stream().map(rating -> {
+    return lawyerRatings.stream().map(rating -> {
             RatingDto dto = new RatingDto();
             dto.setRatingId(rating.getId());
             dto.setCitizenName(rating.getCitizen().getFullName());

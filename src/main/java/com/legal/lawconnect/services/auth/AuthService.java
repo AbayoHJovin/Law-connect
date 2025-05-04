@@ -20,15 +20,13 @@ public class AuthService {
     // 🔁 Create new refresh token
     @Transactional
     public String createRefreshTokenByLawyer(Lawyer lawyer) {
-        // Delete existing token (rotate)
-        refreshTokenRepository.deleteByLawyer(lawyer);
+        RefreshToken token = refreshTokenRepository.findByLawyer(lawyer)
+                .orElse(new RefreshToken());
 
-        RefreshToken token = new RefreshToken();
         token.setLawyer(lawyer);
         token.setToken(UUID.randomUUID().toString());
-        token.setExpiryDate(Instant.now().plusSeconds(604800)); // 7 days
-        RefreshToken savedToken = refreshTokenRepository.save(token);
-        return savedToken.getToken();
+        token.setExpiryDate(Instant.now().plusSeconds(7 * 24 * 60 * 60)); // 7 days
+        return refreshTokenRepository.save(token).getToken();
     }
 
     @Transactional
@@ -42,9 +40,7 @@ public class AuthService {
         return refreshTokenRepository.save(token).getToken();
     }
 
-
-    // 🧪 Verify and return if token is valid
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<RefreshToken> verifyRefreshToken(String tokenStr) {
         return refreshTokenRepository.findByToken(tokenStr)
                 .filter(token -> token.getExpiryDate().isAfter(Instant.now()));

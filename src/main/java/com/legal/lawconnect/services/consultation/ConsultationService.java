@@ -62,10 +62,10 @@ public class ConsultationService implements IConsultationService {
     }
 
     @Override
-    public List<Consultation> getConsultationsForLawyer(UUID lawyerId) {
-        Lawyer owner = lawyerService.findById(lawyerId);
+    public List<Consultation> getConsultationsForLawyer(String lawyerEmail) {
+        Lawyer owner = lawyerService.findByEmail(lawyerEmail);
         if(owner == null) {
-            throw new ResourceNotFoundException("Lawyer with id " + lawyerId + " not found");
+            throw new ResourceNotFoundException("Lawyer with email " + lawyerEmail + " not found");
         }
         return owner.getConsultations();
     }
@@ -169,13 +169,10 @@ public class ConsultationService implements IConsultationService {
     }
 
     @Override
-    public void deleteConsultation(UUID consultationId, UUID lawyerId,String email) {
+    public void deleteConsultation(UUID consultationId,String email) {
         Consultation target = getConsultationById(consultationId,email);
         if(target == null) {
             throw new ResourceNotFoundException("Consultation with id " + consultationId + " not found");
-        }
-        if(!target.getLawyer().getId().equals(lawyerId)) {
-            throw new UnauthorizedActionException("You are not allowed to delete the consultation!");
         }
         consultationRepository.delete(target);
     }

@@ -1,15 +1,19 @@
 package com.legal.lawconnect.controller;
 
+import com.legal.lawconnect.exceptions.UnauthorizedActionException;
 import com.legal.lawconnect.model.Citizen;
+import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.model.RefreshToken;
 import com.legal.lawconnect.response.ApiResponse;
 import com.legal.lawconnect.services.auth.AuthService;
 import com.legal.lawconnect.services.citizen.ICitizenService;
 import com.legal.lawconnect.util.JwtUtil;
+import com.legal.lawconnect.validation.AuthValidation;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,46 +30,34 @@ public class AuthController {
     private final AuthService authService;
     private final ICitizenService citizenService;
     private final JwtUtil jwtUtil;
+    private final AuthValidation authValidation;
 
     @PostMapping("/refresh-token")
     public ResponseEntity<ApiResponse> refreshAccessToken(HttpServletRequest request, HttpServletResponse response) {
         try {
-            String refreshToken = null;
-            if (request.getCookies() != null) {
-                for (Cookie cookie : request.getCookies()) {
-                    if ("refresh_token".equals(cookie.getName())) {
-                        refreshToken = cookie.getValue();
-                        break;
-                    }
-                }
-            }
-
+            String refreshToken = authValidation.extractRefreshTokenFromCookies(request);
             if (refreshToken == null) {
-                return ResponseEntity.status(401).body(new ApiResponse("Refresh token not found in cookies", null));
+                return authValidation.unauthorized("Refresh token not found in cookies");
             }
 
-            Optional<RefreshToken> tokenOpt = authService.verifyRefreshToken(refreshToken);
-            if (tokenOpt.isEmpty()) {
-                return ResponseEntity.status(403).body(new ApiResponse("Refresh token expired! Please login to get a new one.", null));
-            }
+            RefreshToken validToken = authService.verifyRefreshToken(refreshToken)
+                    .orElseThrow(() -> new UnauthorizedActionException("Refresh token expired! Please login again."));
 
-            RefreshToken validToken = tokenOpt.get();
-            Citizen citizen = validToken.getCitizen();
+            String userEmail = validToken.getCitizen() != null
+                    ? validToken.getCitizen().getEmail()
+                    : validToken.getLawyer().getEmail();
 
-            String newAccessToken = jwtUtil.generateToken(citizen.getEmail());
 
-            Cookie newAccessCookie = new Cookie("access_token", newAccessToken);
-            newAccessCookie.setHttpOnly(true);
-            newAccessCookie.setPath("/");
-            newAccessCookie.setMaxAge(15 * 60); // 15 minutes
+            String newAccessToken = jwtUtil.generateToken(userEmail);
 
-            response.addCookie(newAccessCookie);
+            authValidation.setAccessTokenCookie(response, newAccessToken);
 
             return ResponseEntity.ok(new ApiResponse("New access token generated", newAccessToken));
-
+        } catch (UnauthorizedActionException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(e.getMessage(), null));
         } catch (Exception e) {
-            // Catch any unexpected exceptions
-            return ResponseEntity.status(500).body(new ApiResponse("An error occurred while refreshing the access token: " + e.getMessage(), null));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse("An error occurred while refreshing the access token: " + e.getMessage(), null));
         }
     }
 
