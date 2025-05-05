@@ -29,4 +29,6 @@ public interface LawyerRepository extends JpaRepository<Lawyer, UUID> {
     // Get lawyers with average rating EQUAL to a certain value
     @Query("SELECT l FROM Lawyer l JOIN l.ratings r GROUP BY l HAVING AVG(r.rating) = :rating")
     List<Lawyer> findLawyerWithExactRating(@Param("rating") double rating);
+
+    boolean existsByEmailOrPhoneNumber(String email, String phoneNumber);
 }

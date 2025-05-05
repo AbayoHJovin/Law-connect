@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -33,12 +34,20 @@ public class CitizenService implements ICitizenService {
   private final ILawyerService lawyerService;
   private final IRatingService ratingService;
   private final ModelMapper modelMapper;
+    private static final Pattern PHONE_PATTERN = Pattern.compile(
+            "^(\\+2507[289]\\d{7}|07[289]\\d{7})$"
+    );
     private final LawyerRepository lawyerRepository;
 
     @Override
+    @Transactional
     public Citizen addCitizen(AddCitizenRequest citizen) {
+
         if (citizen.getEmail() == null && citizen.getPhoneNumber() == null) {
             throw new IllegalArgumentException("Either email or phoneNumber must be provided");
+        }
+        if (!isValidRwandanPhoneNumber(citizen.getPhoneNumber())) {
+            throw new IllegalArgumentException("Invalid Rwandan phone number format");
         }
         if(!Objects.equals(citizen.getPassword(), citizen.getConfirmPassword())){
             throw new IllegalArgumentException("Passwords do not match");
@@ -65,6 +74,9 @@ public class CitizenService implements ICitizenService {
                 citizen.getLocation(),
                 UserRoles.CITIZEN
         );
+    }
+    public boolean isValidRwandanPhoneNumber(String phoneNumber) {
+        return PHONE_PATTERN.matcher(phoneNumber).matches();
     }
     @Override
     public List<Citizen> getAllCitizens() {

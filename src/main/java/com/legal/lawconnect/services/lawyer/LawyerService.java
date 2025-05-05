@@ -11,6 +11,7 @@ import com.legal.lawconnect.model.Citizen;
 import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.model.Specialization;
 import com.legal.lawconnect.repository.CitizenRepository;
+import com.legal.lawconnect.repository.EmailRepository;
 import com.legal.lawconnect.repository.LawyerRepository;
 import com.legal.lawconnect.repository.SpecializationRepository;
 import com.legal.lawconnect.requests.*;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,16 +45,26 @@ public class LawyerService implements ILawyerService {
     private final ValidateLawyerFields validateLawyerFields;
     private final IMailService mailService;
     private final CitizenRepository citizenRepository;
+    private static final Pattern PHONE_PATTERN = Pattern.compile(
+            "^(\\+2507[289]\\d{7}|07[289]\\d{7})$"
+    );
+    private final EmailRepository emailRepository;
+
 
     @Override
+    @Transactional
     public Lawyer save(AddLawyerRequest lawyer) {
         validateLawyerFields.validateLawyerRequestFields(lawyer);
+        if (!isValidRwandanPhoneNumber(lawyer.getPhoneNumber())) {
+            throw new IllegalArgumentException("Invalid Rwandan phone number format");
+        }
 
         boolean exists = lawyerRepository.existsByLicenseNumberOrEmailIgnoreCase(
                 lawyer.getLicenseNumber(),
                 lawyer.getEmail()
         );
-        if(citizenRepository.existsByEmailOrPhoneNumber(lawyer.getEmail(), lawyer.getPhoneNumber())){
+
+        if(citizenRepository.existsByEmailOrPhoneNumber(lawyer.getEmail(), lawyer.getPhoneNumber()) || lawyerRepository.existsByEmailOrPhoneNumber(lawyer.getEmail(), lawyer.getPhoneNumber())) {
             throw new AlreadyExistsException("Email or phone number is already in use!");
         }
 
@@ -74,6 +86,7 @@ public class LawyerService implements ILawyerService {
             throw new IllegalArgumentException("None of the provided specializations are valid");
         }
         Lawyer newLawyer = createLawyer(lawyer, specializationList);
+        emailRepository.deleteByEmail(lawyer.getEmail());
         return lawyerRepository.save(newLawyer);
     }
 
@@ -92,6 +105,9 @@ public class LawyerService implements ILawyerService {
                 UserRoles.LAWYER,
                 request.getLawyerBio()
         );
+    }
+    public boolean isValidRwandanPhoneNumber(String phoneNumber) {
+        return PHONE_PATTERN.matcher(phoneNumber).matches();
     }
 
     private List<Specialization> resolveValidSpecializations(List<SpecializationRequest> specializationRequests, List<String> invalids) {

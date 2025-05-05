@@ -45,13 +45,13 @@ public class Consultation {
         COMPLETED
     }
 
-    public Consultation(Citizen citizen, Lawyer lawyer, String subject, String description, ConsultationStatus status) {
+    public Consultation(Citizen citizen, Lawyer lawyer, String subject, String description, ConsultationStatus status,Long createdAt) {
         this.citizen = citizen;
         this.lawyer = lawyer;
         this.subject = subject;
         this.description = description;
         this.status = status;
-        this.createdAt = System.currentTimeMillis();
+        this.createdAt = createdAt;
         this.updatedAt = createdAt;
     }
 }

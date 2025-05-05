@@ -148,6 +148,7 @@ public class ConsultationService implements IConsultationService {
             consultation1.setDescription(consultation.getDescription());
         }
         consultation1.setStatus(Consultation.ConsultationStatus.PENDING);
+        consultation1.setCreatedAt(System.currentTimeMillis());
         return consultation1;
     }
     @Override
