@@ -7,6 +7,7 @@ import com.legal.lawconnect.exceptions.UnauthorizedActionException;
 import com.legal.lawconnect.model.Citizen;
 import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.model.Rating;
+import com.legal.lawconnect.repository.LawyerRepository;
 import com.legal.lawconnect.repository.RatingRepository;
 import com.legal.lawconnect.requests.AddRatingRequest;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RatingService implements IRatingService {
     private final RatingRepository ratingRepository;
+    private final LawyerRepository lawyerRepository;
+
     @Override
     public List<RatingDto> getRatingsOfLawyer(String email) {
     List<Rating> allRatings = ratingRepository.findAll();
@@ -31,8 +34,29 @@ public class RatingService implements IRatingService {
             lawyerRatings.add(rating);
         }
     });
-
     return lawyerRatings.stream().map(rating -> {
+            RatingDto dto = new RatingDto();
+            dto.setRatingId(rating.getId());
+            dto.setCitizenName(rating.getCitizen().getFullName());
+            dto.setRatingScore(rating.getRating());
+            dto.setReviewText(rating.getReviewText());
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<RatingDto> getAllRatings(UUID lawyerId) {
+        List<Rating> allRatings = ratingRepository.findAll();
+        List<Rating> lawyerRatings = new ArrayList<>();
+        if(lawyerRepository.findById(lawyerId).isEmpty()){
+            throw new ResourceNotFoundException("The Lawyer doesn't exist");
+        }
+        allRatings.forEach(rating -> {
+            if(Objects.equals(rating.getLawyer().getId(), lawyerId)){
+                lawyerRatings.add(rating);
+            }
+        });
+        return lawyerRatings.stream().map(rating -> {
             RatingDto dto = new RatingDto();
             dto.setRatingId(rating.getId());
             dto.setCitizenName(rating.getCitizen().getFullName());

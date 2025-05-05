@@ -16,7 +16,12 @@ public class MailController {
 
     @PostMapping("/send")
     public ResponseEntity<ApiResponse> sendOtp(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
         try{
+            if (email == null || email.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(new ApiResponse("No email provided.", null));
+            }
+
             mailService.sendVerificationEmail(body.get("email"));
             return ResponseEntity.ok(new ApiResponse("Email sent.", null));
         }catch(Exception e){

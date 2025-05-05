@@ -217,7 +217,15 @@ public class LawyerController {
     }
     }
 
-
+    @GetMapping("/get-rating-by-lawyerId/{lawyerId}")
+    public ResponseEntity<ApiResponse> getAllRatingByLawyerId(@PathVariable UUID lawyerId){
+        try{
+            List<RatingDto> ratingDtos = ratingService.getAllRatings(lawyerId);
+            return ResponseEntity.ok(new ApiResponse("Success", ratingDtos));
+        }catch (RuntimeException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
 
     @GetMapping("/find-rating-equals-to/{ratingValue}")
     public ResponseEntity<ApiResponse> findRatingEqualsTo(@PathVariable int ratingValue){

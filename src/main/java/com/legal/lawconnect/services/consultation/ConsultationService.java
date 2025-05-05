@@ -2,12 +2,14 @@ package com.legal.lawconnect.services.consultation;
 
 import com.legal.lawconnect.dto.CitizenDto;
 import com.legal.lawconnect.dto.ConsultationDto;
+import com.legal.lawconnect.enums.UserRoles;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.exceptions.UnauthorizedActionException;
 import com.legal.lawconnect.model.Citizen;
 import com.legal.lawconnect.model.Consultation;
 import com.legal.lawconnect.model.Lawyer;
 import com.legal.lawconnect.repository.ConsultationRepository;
+import com.legal.lawconnect.requests.ChangeConsultationStatus;
 import com.legal.lawconnect.requests.CreateConsultationRequest;
 import com.legal.lawconnect.requests.UpdateConsultationRequest;
 import com.legal.lawconnect.services.citizen.CitizenService;
@@ -15,7 +17,9 @@ import com.legal.lawconnect.services.citizen.ICitizenService;
 import com.legal.lawconnect.services.lawyer.ILawyerService;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -119,6 +123,7 @@ public class ConsultationService implements IConsultationService {
     }
 
     @Override
+    @Transactional
     public Consultation createConsultation(CreateConsultationRequest consultation,String citizenEmail) {
         Lawyer ownerLawyer = lawyerService.findById(consultation.getLawyerId());
         Citizen ownerCitizen = citizenService.getCitizenByEmail(citizenEmail);
@@ -128,7 +133,11 @@ public class ConsultationService implements IConsultationService {
         if(!ownerLawyer.isAvailableForWork()){
             throw new UnauthorizedActionException("Lawyer Not available for work!");
         }
-       return consultationRepository.save(createNewConsultation(consultation, ownerLawyer, ownerCitizen));
+        try {
+            return consultationRepository.save(createNewConsultation(consultation, ownerLawyer, ownerCitizen));
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("Input value too long, please shorten the subject or description.");
+        }
     }
     private Consultation createNewConsultation(CreateConsultationRequest consultation, Lawyer ownerLawyer, Citizen ownerCitizen) {
         Consultation consultation1 = new Consultation();
@@ -142,6 +151,7 @@ public class ConsultationService implements IConsultationService {
         return consultation1;
     }
     @Override
+    @Transactional
     public Consultation updateConsultation(UUID consultationId, UpdateConsultationRequest updatedConsultation) {
     return consultationRepository.findById(consultationId)
             .map(existingConsultation-> updateExistingConsultation(existingConsultation, updatedConsultation))
@@ -155,20 +165,21 @@ public class ConsultationService implements IConsultationService {
        return existingConsultation;
     }
     @Override
-    public Consultation changeStatus(UUID lawyerId, UUID consultationId, Consultation.ConsultationStatus newStatus,String email) {
-        Consultation target = getConsultationById(consultationId,email);
+    @Transactional
+    public void changeStatus(ChangeConsultationStatus request, String lawyerEmail) {
+        Consultation target = getConsultationById(request.getConsultationId(),lawyerEmail);
         if(target == null) {
-            throw new ResourceNotFoundException("Consultation with id " + consultationId + " not found");
+            throw new ResourceNotFoundException("Consultation with id " + request.getConsultationId() + " not found");
         }
-        if(!target.getLawyer().getId().equals(lawyerId)) {
+        if(!target.getLawyer().getEmail().equals(lawyerEmail) && !target.getLawyer().getRole().equals(UserRoles.LAWYER)) {
             throw new UnauthorizedActionException("You are not allowed to update the status");
         }
-        target.setStatus(newStatus);
+        target.setStatus(request.getStatus());
         consultationRepository.save(target);
-        return target;
     }
 
     @Override
+    @Transactional
     public void deleteConsultation(UUID consultationId,String email) {
         Consultation target = getConsultationById(consultationId,email);
         if(target == null) {
@@ -178,6 +189,7 @@ public class ConsultationService implements IConsultationService {
     }
 
     @Override
+    @Transactional
     public ConsultationDto convertToDto(Consultation consultation) {
         ConsultationDto dto = modelMapper.map(consultation, ConsultationDto.class);
         dto.setCitizenId(consultation.getCitizen().getId());
@@ -186,6 +198,7 @@ public class ConsultationService implements IConsultationService {
     }
 
     @Override
+    @Transactional
     public List<ConsultationDto> getConvertedConsultations(List<Consultation> consultations) {
         return consultations.stream().map(this:: convertToDto).toList();
     }

@@ -1,6 +1,7 @@
 package com.legal.lawconnect.services.mail;
 
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
+import com.legal.lawconnect.functions.ToHtml;
 import com.legal.lawconnect.model.EmailVerification;
 import com.legal.lawconnect.repository.CitizenRepository;
 import com.legal.lawconnect.repository.EmailRepository;
@@ -13,6 +14,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -27,11 +29,12 @@ public class MailService implements IMailService {
     private final EmailRepository emailRepository;
     private final JavaMailSender javaMailSender;
     private final VerificationEmailUtil verificationEmailUtil;
-//    private final CitizenService citizenService;
     private final LawyerRepository lawyerRepository;
     private final CitizenRepository citizenRepository;
+    private final ToHtml toHtml;
 
     @Override
+    @Transactional
     public void sendVerificationEmail(String email) {
         Optional<EmailVerification> existing = emailRepository.findByEmail(email);
         if (email == null || !EMAIL_PATTERN.matcher(email).matches()) {
@@ -95,12 +98,7 @@ public class MailService implements IMailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
             helper.setTo(toEmail);
             helper.setSubject("Password Reset Request");
-
-            String htmlContent = "<p>Click the link below to reset your password:</p>"
-                    + "<p><a href=\"" + resetLink + "\">Reset Password</a></p>"
-                    + "<p>This link will expire in 10 minutes.</p>";
-
-            helper.setText(htmlContent, true); // true indicates HTML
+            helper.setText(toHtml.getVerificationHtmlCode(resetLink), true);
             javaMailSender.send(message);
         } catch (MessagingException e) {
             throw new RuntimeException("Failed to send password reset email", e);

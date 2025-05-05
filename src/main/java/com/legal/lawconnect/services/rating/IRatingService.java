@@ -11,6 +11,9 @@ import java.util.UUID;
 
 public interface IRatingService {
     List<RatingDto> getRatingsOfLawyer(String email);
+
+    List<RatingDto> getAllRatings(UUID lawyerId);
+
     List<Rating> getRatingsByCitizen(UUID citizenId);
     void addRating(AddRatingRequest request, Citizen citizen, Lawyer lawyer,UUID citizenId);
     void removeRating(UUID ratingId, UUID citizenId);

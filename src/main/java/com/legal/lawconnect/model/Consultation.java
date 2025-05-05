@@ -1,5 +1,6 @@
 package com.legal.lawconnect.model;
 
+import jakarta.validation.constraints.Size;
 import lombok.*;
 import jakarta.persistence.*;
 import java.util.UUID;
@@ -24,6 +25,10 @@ public class Consultation {
     private Lawyer lawyer;
 
     private String subject;
+
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name="description", columnDefinition = "TEXT")
     private String description;
 
     @Enumerated(EnumType.STRING)

@@ -2,6 +2,7 @@ package com.legal.lawconnect.services.consultation;
 
 import com.legal.lawconnect.dto.ConsultationDto;
 import com.legal.lawconnect.model.Consultation;
+import com.legal.lawconnect.requests.ChangeConsultationStatus;
 import com.legal.lawconnect.requests.CreateConsultationRequest;
 import com.legal.lawconnect.requests.UpdateConsultationRequest;
 
@@ -23,7 +24,7 @@ public interface IConsultationService {
     // Creation and Update
     Consultation createConsultation(CreateConsultationRequest consultation,String email);
     Consultation updateConsultation(UUID consultationId, UpdateConsultationRequest updatedConsultation);
-    Consultation changeStatus(UUID lawyerId,UUID consultationId, Consultation.ConsultationStatus newStatus,String email);
+    void changeStatus(ChangeConsultationStatus request, String email);
 
     // Deletion
     void deleteConsultation(UUID consultationId,String email);

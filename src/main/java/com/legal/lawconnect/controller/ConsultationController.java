@@ -3,6 +3,7 @@ package com.legal.lawconnect.controller;
 import com.legal.lawconnect.dto.ConsultationDto;
 import com.legal.lawconnect.exceptions.ResourceNotFoundException;
 import com.legal.lawconnect.model.Consultation;
+import com.legal.lawconnect.requests.ChangeConsultationStatus;
 import com.legal.lawconnect.requests.CreateConsultationRequest;
 import com.legal.lawconnect.response.ApiResponse;
 import com.legal.lawconnect.services.consultation.IConsultationService;
@@ -18,7 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("${api.prefix}/consultations/lawy-cit/")
+@RequestMapping("${api.prefix}/consultations/lawy-cit")
 public class ConsultationController {
     private final IConsultationService consultationService;
 
@@ -90,7 +91,6 @@ public class ConsultationController {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("You are not logged in", null));
             }
             String email = authentication.getName();
-
             List<Consultation> consultations = consultationService.getConsultationsForLawyer(email);
             List<ConsultationDto> convertedConsultations = consultationService.getConvertedConsultations(consultations);
             return ResponseEntity.ok(new ApiResponse("Success", convertedConsultations));
@@ -121,6 +121,21 @@ public class ConsultationController {
             List<Consultation> consultations = consultationService.getConsultationsBetweenLawyerAndCitizen(lawyerId,citizenId);
             List<ConsultationDto> convertedConsultations = consultationService.getConvertedConsultations(consultations);
             return ResponseEntity.ok(new ApiResponse("Success", convertedConsultations));
+        }catch(RuntimeException e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(),null));
+        }
+    }
+
+    @PatchMapping("/change-status")
+    public ResponseEntity<ApiResponse> changeConsultationStatus(@RequestBody ChangeConsultationStatus request) {
+        try{
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if(authentication == null||!authentication.isAuthenticated() ){
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse("You are not logged in", null));
+            }
+            String email = authentication.getName();
+            consultationService.changeStatus(request,email);
+            return ResponseEntity.ok(new ApiResponse("Consultation Status Changed Successfully", null));
         }catch(RuntimeException e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(e.getMessage(),null));
         }
